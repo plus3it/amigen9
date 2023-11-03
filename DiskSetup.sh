@@ -10,6 +10,8 @@ UEFIDEVSZ="${UEFIDEVSZ:-256}"
 CHROOTDEV="${CHROOTDEV:-UNDEF}"
 DEBUG="${DEBUG:-UNDEF}"
 FSTYPE="${FSTYPE:-xfs}"
+LABEL_BOOT="${LABEL_BOOT:-boot_disk}"
+LABEL_UEFI="${LABEL_UEFI:-UEFI_DISK}"
 
 # Make interactive-execution more-verbose unless explicitly told not to
 if [[ $( tty -s ) -eq 0 ]] && [[ ${DEBUG} == "UNDEF" ]]
@@ -56,6 +58,8 @@ function UsageMsg {
       printf '\t%-4s%s\n' '-d' 'Base dev-node used for build-device'
       printf '\t%-4s%s\n' '-f' 'Filesystem-type used for root filesystems (default: xfs)'
       printf '\t%-4s%s\n' '-h' 'Print this message'
+      printf '\t%-4s%s\n' '-l' ' for /boot filesystem (default: boot_disk)'
+      printf '\t%-4s%s\n' '-L' ' for /boot filesystem (default: UEFI_DISK)'
       printf '\t%-4s%s\n' '-p' 'Comma-delimited string of colon-delimited partition-specs'
       printf '\t%-6s%s\n' '' 'Default layout:'
       printf '\t%-8s%s\n' '' '/:rootVol:4'
@@ -73,6 +77,8 @@ function UsageMsg {
       printf '\t%-20s%s\n' '--disk' 'See "-d" short-option'
       printf '\t%-20s%s\n' '--fstype' 'See "-f" short-option'
       printf '\t%-20s%s\n' '--help' 'See "-h" short-option'
+      printf '\t%-20s%s\n' '--label-boot' 'See "-l" short-option'
+      printf '\t%-20s%s\n' '--label-uefi' 'See "-L" short-option'
       printf '\t%-20s%s\n' '--partition-string' 'See "-p" short-option'
       printf '\t%-20s%s\n' '--rootlabel' 'See "-r" short-option'
       printf '\t%-20s%s\n' '--uefi-size' 'See "-U" short-option'
@@ -218,13 +224,27 @@ function CarveBare {
      err_exit "Failed creating filesystem"
 }
 
+function SetupBootParts {
+
+    # Make filesystem for /boot/efi
+    err_exit "Creating filesystem on ${CHROOTDEV}${PARTPRE:-}2..." NONE
+    mkfs -t vfat -n "${LABEL_UEFI}" "${CHROOTDEV}${PARTPRE:-}2" || \
+      err_exit "Failed creating filesystem"
+
+    # Make filesystem for /boot
+    err_exit "Creating filesystem on ${CHROOTDEV}${PARTPRE:-}3..." NONE
+    mkfs -t "${FSTYPE}" "${MKFSFORCEOPT}" -L "${LABEL_BOOT}" \
+      "${CHROOTDEV}${PARTPRE:-}3" || \
+      err_exit "Failed creating filesystem"
+}
+
 
 ######################
 ## Main program-flow
 ######################
 OPTIONBUFR=$( getopt \
-  -o b:B:d:f:hp:r:U:v: \
-  --long bootlabel:,boot-size:,disk:,fstype:,help,partition-string:,rootlabel:,uefi-size:,vgname: \
+  -o b:B:d:f:hl:L:p:r:U:v: \
+  --long boot-size:,disk:,fstype:,help,label-boot:,label-uefi:,partition-string:,rootlabel:,uefi-size:,vgname: \
   -n "${PROGNAME}" -- "$@")
 
 eval set -- "${OPTIONBUFR}"
@@ -287,6 +307,32 @@ do
             ;;
       -h|--help)
             UsageMsg 0
+            ;;
+      -l|--label-boot)
+            case "$2" in
+               "")
+                  err_exit "Error: option required but not specified"
+                  shift 2;
+                  exit 1
+                  ;;
+               *)
+                  LABEL_BOOT=${2}
+                  shift 2;
+                  ;;
+            esac
+            ;;
+      -L|--label-uefi)
+            case "$2" in
+               "")
+                  err_exit "Error: option required but not specified"
+                  shift 2;
+                  exit 1
+                  ;;
+               *)
+                  LABEL_UEFI=${2}
+                  shift 2;
+                  ;;
+            esac
             ;;
       -p|--partition-string)
             case "$2" in
@@ -381,3 +427,6 @@ then
 else
    err_exit "The '-r'/'--rootlabel' and '-v'/'--vgname' flag-options are mutually-exclusive. Exiting." 0
 fi
+
+# Take care of /boot/... paritions
+SetupBootParts
