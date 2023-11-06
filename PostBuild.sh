@@ -5,6 +5,7 @@ set -eu -o pipefail
 #
 #######################################################################
 PROGNAME=$(basename "$0")
+PROGDIR="$( dirname "${0}" )"
 CHROOTMNT="${CHROOT:-/mnt/ec2-root}"
 DEBUG="${DEBUG:-UNDEF}"
 FIPSDISABLE="${FIPSDISABLE:-UNDEF}"
@@ -14,37 +15,8 @@ NOTMPFS="${NOTMPFS:-UNDEF}"
 TARGTZ="${TARGTZ:-UTC}"
 SUBSCRIPTION_MANAGER="${SUBSCRIPTION_MANAGER:-disabled}"
 
-# Make interactive-execution more-verbose unless explicitly told not to
-if [[ $( tty -s ) -eq 0 ]] && [[ ${DEBUG} == "UNDEF" ]]
-then
-   DEBUG="true"
-fi
-
-
-# Error handler function
-function err_exit {
-   local ERRSTR
-   local ISNUM
-   local SCRIPTEXIT
-
-   ERRSTR="${1}"
-   ISNUM='^[0-9]+$'
-   SCRIPTEXIT="${2:-1}"
-
-   if [[ ${DEBUG} == true ]]
-   then
-      # Our output channels
-      logger -i -t "${PROGNAME}" -p kern.crit -s -- "${ERRSTR}"
-   else
-      logger -i -t "${PROGNAME}" -p kern.crit -- "${ERRSTR}"
-   fi
-
-   # Only exit if requested exit is numerical
-   if [[ ${SCRIPTEXIT} =~ ${ISNUM} ]]
-   then
-      exit "${SCRIPTEXIT}"
-   fi
-}
+# Import shared error-exit function
+source "${PROGDIR}/err_exit.bashlib"
 
 # Print out a basic usage message
 function UsageMsg {
