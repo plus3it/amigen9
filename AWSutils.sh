@@ -14,6 +14,7 @@ DEBUG="${DEBUG:-UNDEF}"
 SSMAGENT="${SSMAGENT:-UNDEF}"
 UTILSDIR="${UTILSDIR:-UNDEF}"
 
+# shellcheck disable=SC1091
 # Import shared error-exit function
 source "${PROGDIR}/err_exit.bashlib"
 
@@ -360,12 +361,39 @@ function InstallCfnBootstrap {
 # shellcheck disable=SC2016,SC1003
 function ProfileSetupAwsCli {
   install -bDm 0644 -o root -g root <(
-    echo 'AWS_DEFAULT_REGION="$('
-    echo '  curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | \'
-    echo '  python3 -c '"'"'import sys, json; print(json.load(sys.stdin)["region"])'"'"''
-    echo ')"'
-    printf '\nexport AWS_DEFAULT_REGION\n'
-  ) /etc/profile.d/aws_envs.sh
+    printf '# Point AWS utils/libs to the OS CA-trust bundle\n'
+    printf 'AWS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt\n'
+    printf 'REQUESTS_CA_BUNDLE="${AWS_CA_BUNDLE}"\n'
+    printf '\n'
+    printf '# Try to snarf an IMDSv2 token\n'
+    printf 'IMDS_TOKEN="$(\n'
+    printf '  curl -sk \\\n'
+    printf '    -X PUT "http://169.254.169.254/latest/api/token" \\\n'
+    printf '    -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"\n'
+    printf ')"\n'
+    printf '\n'
+    printf '# Use token if available\n'
+    printf 'if [[ -n ${IMDS_TOKEN} ]]\n'
+    printf 'then\n'
+    printf '  AWS_DEFAULT_REGION="$(\n'
+    printf '    curl -sk \\\n'
+    printf '      -H "X-aws-ec2-metadata-token: ${IMDS_TOKEN}" \\\n'
+    printf '        http://169.254.169.254/latest/meta-data/placement/region\n'
+    printf '  )"\n'
+    printf 'else\n'
+    printf '  AWS_DEFAULT_REGION="$(\n'
+    printf '    curl -sk http://169.254.169.254/latest/meta-data/placement/region\n'
+    printf '  )"\n'
+    printf 'fi\n'
+    printf '\n'
+    printf '# Export AWS region if non-null\n'
+    printf 'if [[ -n ${AWS_DEFAULT_REGION} ]]\n'
+    printf 'then\n'
+    printf '  export AWS_DEFAULT_REGION AWS_CA_BUNDLE REQUESTS_CA_BUNDLE\n'
+    printf 'else\n'
+    printf '  echo "Failed setting AWS-supporting shell-envs"\n'
+    printf 'fi\n'
+  ) "${CHROOTMNT}/etc/profile.d/aws_envs.sh"
 }
 
 
