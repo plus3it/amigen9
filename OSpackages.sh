@@ -8,6 +8,24 @@ PROGNAME=$(basename "$0")
 PROGDIR="$( dirname "${0}" )"
 CHROOTMNT="${CHROOT:-/mnt/ec2-root}"
 DEBUG="${DEBUG:-UNDEF}"
+GRUBPKGS_ARM=(
+      grub2-efi-aa64
+      grub2-efi-aa64-modules
+      grub2-tools
+      grub2-tools-extra
+      grub2-tools-minimal
+      shim-aa64
+      shim-unsigned-aarch64
+)
+GRUBPKGS_X86=(
+      grub2-efi-x64
+      grub2-efi-x64-modules
+      grub2-pc-modules
+      grub2-tools
+      grub2-tools-efi
+      grub2-tools-minimal
+      shim-x64
+)
 MINXTRAPKGS=(
       chrony
       cloud-init
@@ -56,6 +74,7 @@ RPMFILE=${RPMFILE:-UNDEF}
 RPMGRP=${RPMGRP:-core}
 
 
+# shellcheck disable=SC1091
 # Import shared error-exit function
 source "${PROGDIR}/err_exit.bashlib"
 
@@ -164,7 +183,7 @@ function PrepChroot {
    if [[ -n "${DNF_ARRAY:-}" ]]
    then
       err_exit "Execute DNF hack..." NONE
-      for DNF_ELEM in ${DNF_ARRAY[*]}
+      for DNF_ELEM in "${DNF_ARRAY[@]}"
       do
          DNF_FILE=${DNF_ELEM//=*/}
          DNF_VALUE=${DNF_ELEM//*=/}
@@ -261,10 +280,30 @@ function MainInstall {
    fi
 
    # Add extra packages to include-list (array)
-   INCLUDEPKGS=( "${INCLUDEPKGS[@]}" "${MINXTRAPKGS[@]}" "${EXTRARPMS[@]}" )
+   case $( uname -i ) in
+     x86_64)
+       INCLUDEPKGS=(
+         "${INCLUDEPKGS[@]}"
+         "${MINXTRAPKGS[@]}"
+         "${EXTRARPMS[@]}"
+         "${GRUBPKGS_X86[@]}"
+       )
+       ;;
+     aarch64)
+       INCLUDEPKGS=(
+         "${INCLUDEPKGS[@]}"
+         "${MINXTRAPKGS[@]}"
+         "${EXTRARPMS[@]}"
+         "${GRUBPKGS_ARM[@]}"
+       )
+       ;;
+     *)
+       err_exit "Architecture not yet supported" 1
+       ;;
+   esac
 
    # Remove excluded packages from include-list
-   for EXCLUDE in ${EXCLUDEPKGS[*]} ${EXTRAEXCLUDE[*]}
+   for EXCLUDE in "${EXCLUDEPKGS[@]}" "${EXTRAEXCLUDE[@]}"
    do
        INCLUDEPKGS=( "${INCLUDEPKGS[@]//*${EXCLUDE}*}" )
    done
@@ -275,7 +314,7 @@ function MainInstall {
 
    # Verify installation
    err_exit "Verifying installed RPMs" NONE
-   for RPM in ${INCLUDEPKGS[*]}
+   for RPM in "${INCLUDEPKGS[@]}"
    do
       err_exit "Checking presence of ${RPM}..." NONE
       chroot "${CHROOTMNT}" bash -c "rpm -q ${RPM}" || \
