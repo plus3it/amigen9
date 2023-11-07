@@ -316,11 +316,15 @@ function MainInstall {
    err_exit "Verifying installed RPMs" NONE
    for RPM in "${INCLUDEPKGS[@]}"
    do
-      err_exit "Checking presence of ${RPM}..." NONE
-      chroot "${CHROOTMNT}" bash -c "rpm -q ${RPM}" || \
-        err_exit "Failed finding ${RPM}"
-   done
+     if [[ ${RPM} = '' ]]
+     then
+       continue
+     fi
 
+     err_exit "Checking presence of ${RPM}..." NONE
+     chroot "${CHROOTMNT}" bash -c "rpm -q ${RPM}" || \
+     err_exit "Failed finding ${RPM}"
+   done
 }
 
 # Get custom repo-RPMs
