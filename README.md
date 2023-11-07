@@ -60,7 +60,7 @@ system-security features to be enabled:
 * UEFI support (to support system-owner's further ability to enable [SecureBoot](https://access.redhat.com/articles/5254641)
   and other Trusted-Computing capabilities)
 
-This capability is offered as some organizations security-auditors not only
+This capability is offered as some organizations' security-auditors not only
 require that some or all of these features be enabled, but that they be enabled
 "from birth" (i.e., a configuraton-reboot to activate them is not sufficient).
 
@@ -80,7 +80,8 @@ These settings may be validated using `firewall-cmd --list-all`.
 The Red Hat images published by this project's owners make use of the `@core`
 RPM package-group plus select utilities to cloud-enable the resulting images
 (e.g. `cloud-init` and CSP-tooling like Amazon's SSM Agent and AWS CLI).
-Further, the Red Hat images published by this project's owners make use of the
+
+The Red Hat images published by this project's owners make use of the
 official Red Hat repositories managed by Red Hat on behalf of the CSP. If these
 repositories will not be suitable to the image-user, it will be necessary for
 the image-user to create their own images. The `OSpackages.sh` script accepts
