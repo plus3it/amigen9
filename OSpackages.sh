@@ -35,12 +35,6 @@ MINXTRAPKGS=(
       efibootmgr
       firewalld
       gdisk
-      grub2-efi-x64
-      grub2-efi-x64-modules
-      grub2-pc-modules
-      grub2-tools
-      grub2-tools-efi
-      grub2-tools-minimal
       grubby
       kernel
       kexec-tools
@@ -48,7 +42,6 @@ MINXTRAPKGS=(
       lvm2
       python3-pip
       rng-tools
-      shim-x64
       unzip
    )
 EXCLUDEPKGS=(
