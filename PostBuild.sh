@@ -18,6 +18,9 @@ SUBSCRIPTION_MANAGER="${SUBSCRIPTION_MANAGER:-disabled}"
 # Import shared error-exit function
 source "${PROGDIR}/err_exit.bashlib"
 
+# Ensure appropriate SEL mode is set
+source "${PROGDIR}/no_sel.bashlib"
+
 # Print out a basic usage message
 function UsageMsg {
    local SCRIPTEXIT
@@ -400,6 +403,12 @@ function GrubSetup {
       printf 'GRUB_ENABLE_BLSCFG=true\n'
    ) > "${CHROOTMNT}/etc/default/grub" || \
      err_exit "Failed writing default/grub file"
+
+   # Install GRUB2 bootloader on x86 hosts
+   if [[ $( uname -i ) == "x86_64" ]]
+   then
+   chroot "${CHROOTMNT}" /bin/bash -c "/sbin/grub2-install ${CHROOTDEV}"
+   fi
 
    # Install GRUB config-file
    err_exit "Installing GRUB config-file..." NONE
