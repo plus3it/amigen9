@@ -18,6 +18,9 @@ UTILSDIR="${UTILSDIR:-UNDEF}"
 # Import shared error-exit function
 source "${PROGDIR}/err_exit.bashlib"
 
+# Ensure appropriate SEL mode is set
+source "${PROGDIR}/no_sel.bashlib"
+
 # Print out a basic usage message
 function UsageMsg {
    local SCRIPTEXIT
