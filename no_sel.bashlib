@@ -1,0 +1,5 @@
+# Disable SElinux as necessary
+if [[ $( getenforce ) == "Enforcing" ]]
+then
+  setenforce 0 || err_exit "Failed to disable SELinux enforcement" 1
+fi
