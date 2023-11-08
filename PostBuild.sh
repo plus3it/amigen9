@@ -404,6 +404,12 @@ function GrubSetup {
    ) > "${CHROOTMNT}/etc/default/grub" || \
      err_exit "Failed writing default/grub file"
 
+   # Install GRUB2 bootloader on x86 hosts
+   if [[ $( uname -i ) == "x86_64" ]]
+   then
+   chroot "${CHROOTMNT}" /bin/bash -c "/sbin/grub2-install ${CHROOTDEV}"
+   fi
+
    # Install GRUB config-file
    err_exit "Installing GRUB config-file..." NONE
    chroot "${CHROOTMNT}" /bin/bash -c "/sbin/grub2-mkconfig \
