@@ -87,3 +87,21 @@ repositories will not be suitable to the image-user, it will be necessary for
 the image-user to create their own images. The `OSpackages.sh` script accepts
 arguments that allow the configuration of custom repositories and RPMs (the
 script requires custom repositories be configured by site repository-RPMs)
+
+# CSP Enablement
+
+The image build-automation also includes the option to bake in CSP-specific tooling.
+
+Note: As of this writing, the only CSP-enablement included in this project has been for AWS. If enablement for other CSPs is desired, it is recommended that users of this project contribute suitable automation and documentation.
+
+## AWS Enablement
+
+AWS-enablement is provided through the [AWSutils.sh](AWSutils.sh) script. This script can install:
+
+* AWS CLI v2: See the AWS CLI [Getting Started](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) page for default, AWS-managed locations for the AWS CLI v2 installers
+* AWS CloudFormation bootstrapper (cfn-bootstrap): See ["CloudFormation helper scripts reference"](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-helper-scripts-reference.html#cfn-helper-scripts-reference-downloads) for default, AWS-managed locations for the `cfn-bootstrap` Python modules
+* AWS SSM Agent: See the _AWS Systems Manager_ document's [Quick Installation Commands](https://docs.aws.amazon.com/systems-manager/latest/userguide/agent-install-rhel-8-9.html#quick-install-rhel-8-9) section for default, AWS-managed locations for the Amazon SSM Agent RPM
+
+This scriipt can also enable arbitrary systemd services. Typically, this will just be the `amazon-ssm-agent` service.
+
+Invoke the `./AWSutils.sh` with either the `-h` or `--help` for the list of flags necessary to specify the above installation-options.
