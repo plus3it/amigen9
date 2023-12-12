@@ -125,6 +125,13 @@ function GetDefaultRepos {
              rhui-client-config-server-9
          )
          ;;
+      centos-stream-release)
+         BASEREPOS=(
+             appstream
+             baseos
+             extras-common
+         )
+         ;;
       *)
          echo "Unknown OS. Aborting" >&2
          exit 1
