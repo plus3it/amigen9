@@ -20,70 +20,70 @@ source "${PROGDIR}/no_sel.bashlib"
 
 # Print out a basic usage message
 function UsageMsg {
-   local SCRIPTEXIT
-   SCRIPTEXIT="${1:-1}"
+  local SCRIPTEXIT
+  SCRIPTEXIT="${1:-1}"
 
-   (
-      echo "Usage: ${0} [GNU long option] [option] ..."
-      echo "  Options:"
-      printf '\t%-4s%s\n' '-d' 'Distro nickname (e.g., "Rocky")'
-      printf '\t%-4s%s\n' '-h' 'Print this message'
-      printf '\t%-4s%s\n' '-k' 'List of RPM-validation key-files or RPMs'
-      printf '\t%-4s%s\n' '-r' 'List of repository-related RPMs'
-      echo "  GNU long options:"
-      printf '\t%-20s%s\n' '--distro-name' 'See "-d" short-option'
-      printf '\t%-20s%s\n' '--help' 'See "-h" short-option'
-      printf '\t%-20s%s\n' '--repo-rpms' 'See "-r" short-option'
-      printf '\t%-20s%s\n' '--sign-keys' 'See "-k" short-option'
-   )
-   exit "${SCRIPTEXIT}"
+  (
+    echo "Usage: ${0} [GNU long option] [option] ..."
+    echo "  Options:"
+    printf '\t%-4s%s\n' '-d' 'Distro nickname (e.g., "Rocky")'
+    printf '\t%-4s%s\n' '-h' 'Print this message'
+    printf '\t%-4s%s\n' '-k' 'List of RPM-validation key-files or RPMs'
+    printf '\t%-4s%s\n' '-r' 'List of repository-related RPMs'
+    echo "  GNU long options:"
+    printf '\t%-20s%s\n' '--distro-name' 'See "-d" short-option'
+    printf '\t%-20s%s\n' '--help' 'See "-h" short-option'
+    printf '\t%-20s%s\n' '--repo-rpms' 'See "-r" short-option'
+    printf '\t%-20s%s\n' '--sign-keys' 'See "-k" short-option'
+  )
+  exit "${SCRIPTEXIT}"
 }
 
 # Install the alt-distro's GPG key(s)
 function InstallGpgKeys {
-   local ITEM
+  local ITEM
 
-   for ITEM in "${PKGSIGNKEYS[@]}"
-   do
-      if [[ ${ITEM} == "" ]]
-      then
-         break
-      elif [[ ${ITEM} == *.rpm ]]
-      then
-         echo yum install -y "${ITEM}"
-      else
-         printf "Installing %s to /etc/pki/rpm-gpg... " \
-           "${ITEM}"
-         cd /etc/pki/rpm-gpg || err_exit "Could not chdir"
-         curl -sOkL "${ITEM}" || err_exit "Download failed"
-         echo "Success"
-         cd "${RUNDIR}"
-      fi
-   done
+  for ITEM in "${PKGSIGNKEYS[@]}"
+  do
+    if [[ ${ITEM} == "" ]]
+    then
+      break
+    elif [[ ${ITEM} == *.rpm ]]
+    then
+      echo yum install -y "${ITEM}"
+    else
+      printf "Installing %s to /etc/pki/rpm-gpg... " \
+        "${ITEM}"
+      cd /etc/pki/rpm-gpg || err_exit "Could not chdir"
+      curl -sOkL "${ITEM}" || err_exit "Download failed"
+      echo "Success"
+      cd "${RUNDIR}"
+    fi
+  done
 }
 
 function StageDistroRpms {
-   local ITEM
+  local ITEM
 
-   if [[ ! -d ${HOME}/RPM/${DISTRONAME} ]]
-   then
-      printf "Creating %s... " "${HOME}/RPM/${DISTRONAME}"
-      install -dDm 0755 "${HOME}/RPM/${DISTRONAME}" || \
-        err_exit "Failed to create ${HOME}/RPM/${DISTRONAME}"
+  if [[ ! -d ${HOME}/RPM/${DISTRONAME} ]]
+  then
+    printf "Creating %s... " "${HOME}/RPM/${DISTRONAME}"
+    install -dDm 0755 "${HOME}/RPM/${DISTRONAME}" || \
+      err_exit "Failed to create ${HOME}/RPM/${DISTRONAME}"
+    echo "Success"
+  fi
+
+  (
+    cd "${HOME}/RPM/${DISTRONAME}"
+
+    for ITEM in "${REPORPMS[@]}"
+    do
+      printf "fetching %s to %s... " "${ITEM}" \
+        "${HOME}/RPM/${DISTRONAME}"
+      curl -sOkL "${ITEM}"
       echo "Success"
-   fi
-
-   (
-     cd "${HOME}/RPM/${DISTRONAME}"
-
-     for ITEM in "${REPORPMS[@]}"
-     do
-        printf "fetching %s to %s... " "${ITEM}" \
-          "${HOME}/RPM/${DISTRONAME}"
-        curl -sOkL "${ITEM}"
-        echo "Success"
-     done
-   )
+    done
+  )
 }
 
 
@@ -103,72 +103,72 @@ eval set -- "${OPTIONBUFR}"
 ###################################
 while true
 do
-   case "$1" in
-      -d|--distro-name)
-            case "$2" in
-               "")
-                  err_exit "Error: option required but not specified"
-                  shift 2;
-                  exit 1
-                  ;;
-               *)
-                  DISTRONAME="${2}"
-                  shift 2;
-                  ;;
-            esac
+  case "$1" in
+    -d|--distro-name)
+        case "$2" in
+          "")
+            err_exit "Error: option required but not specified"
+            shift 2;
+            exit 1
             ;;
-      -h|--help)
-            UsageMsg 0
+          *)
+            DISTRONAME="${2}"
+            shift 2;
             ;;
-      -k|--sign-keys)
-            case "$2" in
-               "")
-                  err_exit "Error: option required but not specified"
-                  shift 2;
-                  exit 1
-                  ;;
-               *)
-                  IFS=, read -ra PKGSIGNKEYS <<< "$2"
-                  shift 2;
-                  ;;
-            esac
+        esac
+        ;;
+    -h|--help)
+        UsageMsg 0
+        ;;
+    -k|--sign-keys)
+        case "$2" in
+          "")
+            err_exit "Error: option required but not specified"
+            shift 2;
+            exit 1
             ;;
-      -r|--repo-rpms)
-            case "$2" in
-               "")
-                  err_exit "Error: option required but not specified"
-                  shift 2;
-                  exit 1
-                  ;;
-               *)
-                  IFS=, read -ra REPORPMS <<< "$2"
-                  shift 2;
-                  ;;
-            esac
+          *)
+            IFS=, read -ra PKGSIGNKEYS <<< "$2"
+            shift 2;
             ;;
-      --)
-         shift
-         break
-         ;;
-      *)
-         err_exit "Internal error!"
-         exit 1
-         ;;
-   esac
+        esac
+        ;;
+    -r|--repo-rpms)
+        case "$2" in
+          "")
+            err_exit "Error: option required but not specified"
+            shift 2;
+            exit 1
+            ;;
+          *)
+            IFS=, read -ra REPORPMS <<< "$2"
+            shift 2;
+            ;;
+        esac
+        ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      err_exit "Internal error!"
+      exit 1
+      ;;
+  esac
 done
 
 # Bail if not root
 if [[ ${EUID} != 0 ]]
 then
-   err_exit "Must be root to execute disk-carving actions"
+  err_exit "Must be root to execute disk-carving actions"
 fi
 
 # Ensure we have our arguments
-if [[ ${#REPORPMS[*]} -eq 0 ]] ||
-   [[ ${#PKGSIGNKEYS[*]} -eq 0 ]] ||
-   [[ -z ${DISTRONAME} ]]
+if  [[ ${#REPORPMS[*]} -eq 0 ]] ||
+    [[ ${#PKGSIGNKEYS[*]} -eq 0 ]] ||
+    [[ -z ${DISTRONAME} ]]
 then
-   UsageMsg 1
+  UsageMsg 1
 fi
 
 InstallGpgKeys
