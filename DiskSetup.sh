@@ -75,16 +75,16 @@ function CarveLVM {
   # Whether to use flag-passed partition-string or default values
   if [ -z ${GEOMETRYSTRING+x} ]
   then
-     # This is fugly but might(??) be easier for others to follow/update
-     PARTITIONSTR="/:rootVol:4"
-     PARTITIONSTR+=",swap:swapVol:2"
-     PARTITIONSTR+=",/home:homeVol:1"
-     PARTITIONSTR+=",/var:varVol:2"
-     PARTITIONSTR+=",/var/tmp:varTmpVol:2"
-     PARTITIONSTR+=",/var/log:logVol:2"
-     PARTITIONSTR+=",/var/log/audit:auditVol:100%FREE"
+    # This is fugly but might(??) be easier for others to follow/update
+    PARTITIONSTR="/:rootVol:4"
+    PARTITIONSTR+=",swap:swapVol:2"
+    PARTITIONSTR+=",/home:homeVol:1"
+    PARTITIONSTR+=",/var:varVol:2"
+    PARTITIONSTR+=",/var/tmp:varTmpVol:2"
+    PARTITIONSTR+=",/var/log:logVol:2"
+    PARTITIONSTR+=",/var/log/audit:auditVol:100%FREE"
   else
-     PARTITIONSTR="${GEOMETRYSTRING}"
+    PARTITIONSTR="${GEOMETRYSTRING}"
   fi
 
   # Convert ${PARTITIONSTR} to iterable array
@@ -101,14 +101,14 @@ function CarveLVM {
     mkpart primary "${FSTYPE}" 1049k 2m \
     mkpart primary fat16 4096s $(( 2 + UEFIDEVSZ ))m \
     mkpart primary xfs $((
-     2 + UEFIDEVSZ ))m $(( ( 2 + UEFIDEVSZ ) + BOOTDEVSZ
+      2 + UEFIDEVSZ ))m $(( ( 2 + UEFIDEVSZ ) + BOOTDEVSZ
     ))m \
     mkpart primary xfs $(( ( 2 + UEFIDEVSZ ) + BOOTDEVSZ ))m 100% \
     set 1 bios_grub on \
     set 2 esp on \
     set 3 bls_boot on \
     set 4 lvm on || \
-     err_exit "Failed laying down new partition-table"
+      err_exit "Failed laying down new partition-table"
 
   ## Create LVM objects
 
@@ -184,7 +184,7 @@ function CarveBare {
     mkpart primary "${FSTYPE}" 1049k 2m \
     mkpart primary fat16 4096s $(( 2 + UEFIDEVSZ ))m \
     mkpart primary xfs $((
-     2 + UEFIDEVSZ ))m $(( ( 2 + UEFIDEVSZ ) + BOOTDEVSZ
+      2 + UEFIDEVSZ ))m $(( ( 2 + UEFIDEVSZ ) + BOOTDEVSZ
     ))m \
     mkpart primary xfs $(( ( 2 + UEFIDEVSZ ) + BOOTDEVSZ ))m 100% \
     set 1 bios_grub on \
@@ -201,14 +201,14 @@ function CarveBare {
 
 function SetupBootParts {
 
-   # Make filesystem for /boot/efi
-   err_exit "Creating filesystem on ${CHROOTDEV}${PARTPRE:-}2..." NONE
-   mkfs -t vfat -n "${LABEL_UEFI}" "${CHROOTDEV}${PARTPRE:-}2" || \
+  # Make filesystem for /boot/efi
+  err_exit "Creating filesystem on ${CHROOTDEV}${PARTPRE:-}2..." NONE
+  mkfs -t vfat -n "${LABEL_UEFI}" "${CHROOTDEV}${PARTPRE:-}2" || \
     err_exit "Failed creating filesystem"
 
-   # Make filesystem for /boot
-   err_exit "Creating filesystem on ${CHROOTDEV}${PARTPRE:-}3..." NONE
-   mkfs -t "${FSTYPE}" "${MKFSFORCEOPT}" -L "${LABEL_BOOT}" \
+  # Make filesystem for /boot
+  err_exit "Creating filesystem on ${CHROOTDEV}${PARTPRE:-}3..." NONE
+  mkfs -t "${FSTYPE}" "${MKFSFORCEOPT}" -L "${LABEL_BOOT}" \
     "${CHROOTDEV}${PARTPRE:-}3" || \
     err_exit "Failed creating filesystem"
 }
