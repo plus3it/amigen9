@@ -119,11 +119,11 @@ function GetDefaultRepos {
   fi
 
   case $( rpm -qf /etc/os-release --qf '%{name}' ) in
-    redhat-release-server|redhat-release)
+    almalinux-release)
       BASEREPOS=(
-        rhel-9-appstream-rhui-rpms
-        rhel-9-baseos-rhui-rpms
-        rhui-client-config-server-9
+        appstream
+        baseos
+        extras
       )
       ;;
     centos-stream-release)
@@ -131,6 +131,13 @@ function GetDefaultRepos {
         appstream
         baseos
         extras-common
+      )
+      ;;
+    redhat-release-server|redhat-release)
+      BASEREPOS=(
+        rhel-9-appstream-rhui-rpms
+        rhel-9-baseos-rhui-rpms
+        rhui-client-config-server-9
       )
       ;;
     rocky-release)
