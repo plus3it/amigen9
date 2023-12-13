@@ -174,8 +174,11 @@ function ConfigureCloudInit {
   local CLOUDCFG
 
   CLOUDCFG="${CHROOTMNT}/etc/cloud/cloud.cfg"
-  CLINITUSR=$( grep -E "name: (maintuser|centos|ec2-user|cloud-user)" \
-        "${CLOUDCFG}" | awk '{print $2}')
+  CLINITUSR="$(
+    grep -E "name: (maintuser|centos|ec2-user|cloud-user|almalinux)" \
+      "${CLOUDCFG}" | \
+    awk '{print $2}'
+  )"
 
   # Reset key parms in standard cloud.cfg file
   if [ "${CLINITUSR}" = "" ]
