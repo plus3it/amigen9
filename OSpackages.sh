@@ -133,6 +133,13 @@ function GetDefaultRepos {
         extras-common
       )
       ;;
+    oraclelinux-release)
+      BASEREPOS=(
+        ol9_UEKR7
+        ol9_appstream
+        ol9_baseos_latest
+      )
+      ;;
     redhat-release-server|redhat-release)
       BASEREPOS=(
         rhel-9-appstream-rhui-rpms
