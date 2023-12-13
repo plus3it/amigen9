@@ -133,6 +133,13 @@ function GetDefaultRepos {
         extras-common
       )
       ;;
+    rocky-release)
+      BASEREPOS=(
+        appstream
+        baseos
+        extras
+      )
+      ;;
     *)
       echo "Unknown OS. Aborting" >&2
       exit 1
