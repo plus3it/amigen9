@@ -520,3 +520,11 @@ PrepChroot
 
 # Install the desired RPM-group or manifest-file
 MainInstall
+
+#############################################
+## Ensure AMI repo-activations are correct ##
+# disable any repo that might interfere
+chroot "${CHROOTMNT}" /usr/bin/yum-config-manager --disable "*"
+
+# Enable the requested list of repos
+chroot "${CHROOTMNT}" /usr/bin/yum-config-manager --enable "${OSREPOS}"
