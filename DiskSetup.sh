@@ -90,10 +90,8 @@ function CarveLVM {
   # Convert ${PARTITIONSTR} to iterable array
   IFS=',' read -r -a PARTITIONARRAY <<< "${PARTITIONSTR}"
 
-  # Clear the MBR and partition table
-  err_exit "Clearing existing partition-tables..." NONE
-  dd if=/dev/zero of="${CHROOTDEV}" bs=512 count=1000 > /dev/null 2>&1 || \
-    err_exit "Failed clearing existing partition-tables"
+  # Clear the target-disk of partitioning and other structural data
+  CleanChrootDiskPrtTbl
 
   # Lay down the base partitions
   err_exit "Laying down new partition-table..." NONE
@@ -173,10 +171,8 @@ function CarveLVM {
 
 # Partition with no LVM
 function CarveBare {
-  # Clear the MBR and partition table
-  err_exit "Clearing existing partition-tables..." NONE
-  dd if=/dev/zero of="${CHROOTDEV}" bs=512 count=1000 > /dev/null 2>&1 || \
-    err_exit "Failed clearing existing partition-tables"
+  # Clear the target-disk of partitioning and other structural data
+  CleanChrootDiskPrtTbl
 
   # Lay down the base partitions
   err_exit "Laying down new partition-table..." NONE
@@ -197,6 +193,44 @@ function CarveBare {
   mkfs -t "${FSTYPE}" "${MKFSFORCEOPT}" -L "${ROOTLABEL}" \
     "${CHROOTDEV}${PARTPRE:-}4" || \
     err_exit "Failed creating filesystem"
+}
+
+function CleanChrootDiskPrtTbl {
+  local PART_NUM
+  local PDEV
+
+  # Iteratively nuke partitions from NVMe devices
+  if [[ ${CHROOTDEV} == "/dev/nvme"* ]]
+  then
+    for PDEV in $( blkid | grep "${CHROOTDEV}" | sed 's/:.*$//' )
+    do
+      PART_NUM="${PDEV//*p/}"
+
+      printf "Deleting partition %s from %s... " "${PART_NUM}" "${CHROOTDEV}"
+      parted "${CHROOTDEV}" rm "${PART_NUM}" || ( echo FAILED ; exit 1 )
+      echo SUCCESS
+    done
+  # Iteratively nuke partitions from Xen Virtual Disk devices
+  elif [[ ${CHROOTDEV} == "/dev/xvd"* ]]
+  then
+    for PDEV in $( blkid | grep "${CHROOTDEV}" | sed 's/:.*$//' )
+    do
+      PART_NUM="${PDEV//*xvd?/}"
+
+      printf "Deleting partition %s from %s... " "${PART_NUM}" "${CHROOTDEV}"
+      parted "${CHROOTDEV}" rm "${PART_NUM}" || ( echo FAILED ; exit 1 )
+      echo SUCCESS
+    done
+  fi
+
+  # Ask kernelt to update its partition-map of target-disk
+  partprobe "${CHROOTDEV}"
+
+
+  # Null-out any lingering disk structs
+  err_exit "Clearing existing partition-tables..." NONE
+  dd if=/dev/zero of="${CHROOTDEV}" bs=512 count=1000 > /dev/null 2>&1 || \
+    err_exit "Failed clearing existing partition-tables"
 }
 
 function SetupBootParts {
