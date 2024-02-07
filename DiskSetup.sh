@@ -207,7 +207,7 @@ function CleanChrootDiskPrtTbl {
       PART_NUM="${PDEV//*p/}"
 
       printf "Deleting partition %s from %s... " "${PART_NUM}" "${CHROOTDEV}"
-      parted "${CHROOTDEV}" rm "${PART_NUM}" || ( echo FAILED ; exit 1 )
+      parted "${CHROOTDEV}" rm "${PART_NUM}" || true
       echo SUCCESS
     done
   # Iteratively nuke partitions from Xen Virtual Disk devices
@@ -218,7 +218,7 @@ function CleanChrootDiskPrtTbl {
       PART_NUM="${PDEV//*xvd?/}"
 
       printf "Deleting partition %s from %s... " "${PART_NUM}" "${CHROOTDEV}"
-      parted "${CHROOTDEV}" rm "${PART_NUM}" || ( echo FAILED ; exit 1 )
+      parted "${CHROOTDEV}" rm "${PART_NUM}" || true
       echo SUCCESS
     done
   fi
