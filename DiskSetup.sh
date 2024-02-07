@@ -223,14 +223,17 @@ function CleanChrootDiskPrtTbl {
     done
   fi
 
-  # Ask kernelt to update its partition-map of target-disk
-  partprobe "${CHROOTDEV}"
+  # Ask kernel to update its partition-map of target-disk
+  partprobe "${CHROOTDEV}" || true
 
 
   # Null-out any lingering disk structs
   err_exit "Clearing existing partition-tables..." NONE
   dd if=/dev/zero of="${CHROOTDEV}" bs=512 count=1000 > /dev/null 2>&1 || \
     err_exit "Failed clearing existing partition-tables"
+
+  # Ask kernel, again, to update its partition-map of target-disk
+  partprobe "${CHROOTDEV}" || true
 }
 
 function SetupBootParts {
