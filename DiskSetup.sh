@@ -207,7 +207,7 @@ function CleanChrootDiskPrtTbl {
       PART_NUM="${PDEV//*p/}"
 
       printf "Deleting partition %s from %s... " "${PART_NUM}" "${CHROOTDEV}"
-      parted -sf "${CHROOTDEV}" rm "${PART_NUM}" || true
+      parted -sf "${CHROOTDEV}" rm "${PART_NUM}"
       echo SUCCESS
     done
   # Iteratively nuke partitions from Xen Virtual Disk devices
@@ -218,13 +218,13 @@ function CleanChrootDiskPrtTbl {
       PART_NUM="${PDEV//*xvd?/}"
 
       printf "Deleting partition %s from %s... " "${PART_NUM}" "${CHROOTDEV}"
-      parted -sf "${CHROOTDEV}" rm "${PART_NUM}" || true
+      parted -sf "${CHROOTDEV}" rm "${PART_NUM}"
       echo SUCCESS
     done
   fi
 
   # Ask kernel to update its partition-map of target-disk
-  partprobe "${CHROOTDEV}" || true
+  partprobe "${CHROOTDEV}"
 
 
   # Null-out any lingering disk structs
