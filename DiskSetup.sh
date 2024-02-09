@@ -34,7 +34,7 @@ function UsageMsg {
     printf '\t%-4s%s\n' '-f' 'Filesystem-type used for root filesystems (default: xfs)'
     printf '\t%-4s%s\n' '-h' 'Print this message'
     printf '\t%-4s%s\n' '-l' ' for /boot filesystem (default: boot_disk)'
-    printf '\t%-4s%s\n' '-L' ' for /boot filesystem (default: UEFI_DISK)'
+    printf '\t%-4s%s\n' '-L' ' for /boot/efi filesystem (default: UEFI_DISK)'
     printf '\t%-4s%s\n' '-p' 'Comma-delimited string of colon-delimited partition-specs'
     printf '\t%-6s%s\n' '' 'Default layout:'
     printf '\t%-8s%s\n' '' '/:rootVol:4'
