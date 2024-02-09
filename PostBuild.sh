@@ -379,7 +379,6 @@ function GrubSetup {
 
   # Assemble string for GRUB_CMDLINE_LINUX value
   GRUBCMDLINE="${ROOTTOK} "
-  GRUBCMDLINE+="crashkernel=auto "
   GRUBCMDLINE+="vconsole.keymap=us "
   GRUBCMDLINE+="vconsole.font=latarcyrheb-sun16 "
   GRUBCMDLINE+="console=tty0 "
@@ -406,17 +405,31 @@ function GrubSetup {
   ) > "${CHROOTMNT}/etc/default/grub" || \
     err_exit "Failed writing default/grub file"
 
+  # Reinstall the grub-related RPMs (just in case)
+  err_exit "Reinstalling the GRUB-related RPMs ..." NONE
+  dnf reinstall -y shim-x64 grub2-\* || \
+    err_exit "Failed while reinstalling the GRUB-related RPMs" NONE
+  err_exit "GRUB-related RPMs reinstalled"  NONE
+
+
   # Install GRUB2 bootloader when EFI not active
   if [[ ! -d /sys/firmware/efi ]]
   then
   chroot "${CHROOTMNT}" /bin/bash -c "/sbin/grub2-install ${CHROOTDEV}"
   fi
 
-  # Install GRUB config-file
+  # Install GRUB config-file(s)
+  err_exit "Installing BIOS-boot GRUB components..." NONE
+  chroot "${CHROOTMNT}" /bin/bash -c "grub2-install ${CHROOTDEV} \
+    --target=i386-pc"|| \
+    err_exit "Failed to install BIOS-boot GRUB components"
+  err_exit "BIOS-boot GRUB components installed" NONE
+
   err_exit "Installing GRUB config-file..." NONE
   chroot "${CHROOTMNT}" /bin/bash -c "/sbin/grub2-mkconfig \
     > /boot/grub2/grub.cfg" || \
     err_exit "Failed to install GRUB config-file"
+  err_exit "GRUB config-file installed" NONE
 
   # Make intramfs in chroot-dev
   if [[ ${FIPSDISABLE} != "true" ]]
@@ -494,6 +507,17 @@ function SetupTmpfs {
       err_exit "Failed enabling tmp.mount unit"
 
   fi
+}
+
+# Disable kdump
+function DisableKdumpSvc {
+  err_exit "Disabling kdump service... " NONE
+  chroot "${CHROOTMNT}" /bin/systemctl disable --now kdump || \
+    err_exit "Failed while disabling kdump service"
+
+  err_exit "Masking kdump service... " NONE
+  chroot "${CHROOTMNT}" /bin/systemctl mask --now kdump || \
+    err_exit "Failed while masking kdump service"
 }
 
 # Initialize authselect Subsystem
@@ -637,8 +661,12 @@ GrubSetup
 # Initialize authselect subsystem
 authselectInit
 
+# Wholly disable kdump service
+DisableKdumpSvc
+
 # Clean up yum/dnf history
 CleanHistory
 
 # Apply SELinux settings
 SELsetup
+
