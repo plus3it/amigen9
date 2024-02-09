@@ -379,7 +379,6 @@ function GrubSetup {
 
   # Assemble string for GRUB_CMDLINE_LINUX value
   GRUBCMDLINE="${ROOTTOK} "
-  GRUBCMDLINE+="crashkernel=256M "
   GRUBCMDLINE+="vconsole.keymap=us "
   GRUBCMDLINE+="vconsole.font=latarcyrheb-sun16 "
   GRUBCMDLINE+="console=tty0 "
@@ -508,6 +507,17 @@ function SetupTmpfs {
       err_exit "Failed enabling tmp.mount unit"
 
   fi
+}
+
+# Disable kdump
+function DisableKdumpSvc {
+  err_exit "Disabling kdump service... " NONE
+  chroot "${CHROOTMNT}" /bin/systemctl disable --now kdump || \
+    err_exit "Failed while disabling kdump service"
+
+  err_exit "Masking kdump service... " NONE
+  chroot "${CHROOTMNT}" /bin/systemctl mask --now kdump || \
+    err_exit "Failed while masking kdump service"
 }
 
 # Initialize authselect Subsystem
@@ -651,8 +661,12 @@ GrubSetup
 # Initialize authselect subsystem
 authselectInit
 
+# Wholly disable kdump service
+DisableKdumpSvc
+
 # Clean up yum/dnf history
 CleanHistory
 
 # Apply SELinux settings
 SELsetup
+
