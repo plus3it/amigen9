@@ -379,7 +379,7 @@ function GrubSetup {
 
   # Assemble string for GRUB_CMDLINE_LINUX value
   GRUBCMDLINE="${ROOTTOK} "
-  GRUBCMDLINE+="crashkernel=auto "
+  GRUBCMDLINE+="crashkernel=256M "
   GRUBCMDLINE+="vconsole.keymap=us "
   GRUBCMDLINE+="vconsole.font=latarcyrheb-sun16 "
   GRUBCMDLINE+="console=tty0 "
