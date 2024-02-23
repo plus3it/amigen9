@@ -230,7 +230,17 @@ function PrepChroot {
   fi
 
   # Stage our base RPMs
-  yumdownloader -y --destdir=/tmp "${BASEPKGS[@]}"
+  if [[ -n ${OSREPOS:-} ]]
+  then
+    dnf download \
+      --disablerepo "*" \
+      --enablerepo  "${OSREPOS}" \
+      -y \
+      --destdir /tmp "${BASEPKGS[@]}"
+  else
+    dnf download -y --destdir /tmp "${BASEPKGS[@]}"
+  fi
+
   if [[ ${REPORPMS:-} != '' ]]
   then
     FetchCustomRepos
