@@ -381,9 +381,11 @@ function GrubSetup {
   GRUBCMDLINE="${ROOTTOK} "
   GRUBCMDLINE+="vconsole.keymap=us "
   GRUBCMDLINE+="vconsole.font=latarcyrheb-sun16 "
-  GRUBCMDLINE+="console=tty0 "
+  GRUBCMDLINE+="console=tty1 "
   GRUBCMDLINE+="console=ttyS0,115200n8 "
+  GRUBCMDLINE+="rd.blacklist=nouveau "
   GRUBCMDLINE+="net.ifnames=0 "
+  GRUBCMDLINE+="nvme_core.io_timeout=4294967295 "
   if [[ ${FIPSDISABLE} == "true" ]]
   then
     GRUBCMDLINE+="fips=0"
@@ -396,7 +398,7 @@ function GrubSetup {
     printf 'GRUB_DISTRIBUTOR="CentOS Linux"\n'
     printf 'GRUB_DEFAULT=saved\n'
     printf 'GRUB_DISABLE_SUBMENU=true\n'
-    printf 'GRUB_TERMINAL="serial console"\n'
+    printf 'GRUB_TERMINAL_OUTPUT="console"\n'
     printf 'GRUB_SERIAL_COMMAND="serial --speed=115200"\n'
     printf 'GRUB_CMDLINE_LINUX="%s"\n' "${GRUBCMDLINE}"
     printf 'GRUB_DISABLE_RECOVERY=true\n'
@@ -446,6 +448,25 @@ function GrubSetup {
 
 
 }
+
+function GrubSetup_BIOS {
+  err_exit "Installing helper-script..." NONE
+  install -bDm 0755  "$( dirname "${0}" )/DualMode-GRUBsetup.sh" \
+    "${CHROOTMNT}/root" || err_exit "Failed installing helper-script"
+  err_exit "SUCCESS" NONE
+
+  err_exit "Running helper-script..." NONE
+  chroot "${CHROOTMNT}" /root/DualMode-GRUBsetup.sh || \
+    err_exit "Failed running helper-script..."
+  err_exit "SUCCESS" NONE
+
+  err_exit "Cleaning up helper-script..." NONE
+  rm "${CHROOTMNT}/root/DualMode-GRUBsetup.sh" || \
+    err_exit "Failed removing helper-script..."
+  err_exit "SUCCESS" NONE
+
+}
+
 
 # Configure SELinux
 function SELsetup {
@@ -657,6 +678,9 @@ ConfigureCloudInit
 
 # Do GRUB2 setup tasks
 GrubSetup
+
+# Do GRUB2 setup tasks for BIOS-boot compatibility
+GrubSetup_BIOS
 
 # Initialize authselect subsystem
 authselectInit

@@ -10,6 +10,7 @@ PROGNAME=$( basename "$0" )
 PROGDIR="$( dirname "${0}" )"
 RUNDIR="$( dirname "$0" )"
 DEBUG="${DEBUG:-UNDEF}"
+HOME="${HOME:-/root}"
 
 # Import shared error-exit function
 source "${PROGDIR}/err_exit.bashlib"
