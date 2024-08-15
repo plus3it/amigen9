@@ -429,7 +429,7 @@ function GrubSetup {
 
   err_exit "Installing GRUB config-file..." NONE
   chroot "${CHROOTMNT}" /bin/bash -c "/sbin/grub2-mkconfig \
-    > /boot/grub2/grub.cfg" || \
+    -o /boot/grub2/grub.cfg --update-bls-cmdline" || \
     err_exit "Failed to install GRUB config-file"
   err_exit "GRUB config-file installed" NONE
 
