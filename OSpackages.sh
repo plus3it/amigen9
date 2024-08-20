@@ -48,6 +48,7 @@ EXCLUDEPKGS=(
   alsa-firmware
   alsa-tools-firmware
   biosdevname
+  insights-client
   iprutils
   iwl100-firmware
   iwl1000-firmware
