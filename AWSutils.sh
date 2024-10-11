@@ -354,10 +354,73 @@ function InstallCfnBootstrap {
     chroot "${CHROOTMNT}" alternatives --verbose --install /opt/aws/bin/cfn-hup cfn-hup /usr/local/bin/cfn-hup 1 --initscript cfn-hup || \
       err_exit "Failed configuring cfn-hup symlink and initscript"
 
+    # Install systemd-supporting content
+    InstallCfnBootstrap_systemd
+
     err_exit "Cleaning up install files..." NONE
     rm -rf "${CHROOTMNT}${TMPDIR}" || \
       err_exit "Failed cleaning up install files"
   fi
+}
+
+# Install systemd bits
+function InstallCfnBootstrap_systemd {
+  local SVC_NAME="cfn-hup"
+  local ETC_DIR="${CHROOTMNT}/etc/systemd/system"
+  local SVC_FILE="${ETC_DIR}/${SVC_NAME}.service"
+  local OS_VERSION
+
+  SVC_NAME="cfn-hup"
+  ETC_DIR="${CHROOTMNT}/etc/systemd/system"
+  SVC_FILE="${ETC_DIR}/${SVC_NAME}.service"
+  OS_VERSION="$(
+    awk -F "=" '/^VERSION=/{ print $2 }' /etc/os-release | \
+    sed -e 's/"//g' | \
+    cut -d '.' -f 1
+  )"
+
+  if [[ ${OS_VERSION} -ge 9 ]]
+  then
+    err_exit "EL 9+ distros want systemd units..." NONE
+
+    if [[ ! -d ${ETC_DIR} ]]
+    then
+      err_exit "Creating ${ETC_DIR}" NONE
+      install -dDm 0755 "${ETC_DIR}"  || \
+        err_exit "Failed creating ${ETC_DIR}"
+    fi
+
+    if [[ ! -f ${SVC_FILE} ]]
+    then
+      err_exit "Installing systemd unit-file for ${SVC_NAME}..." NONE
+      install -bDm 0644 <(
+        echo "[Unit]"
+        echo "Description=cfn-hup Service"
+        echo "After=network.target"
+        echo ""
+        echo "[Service]"
+        echo "ExecStart=/usr/local/bin/cfn-hup"
+        echo "Type=forking"
+        echo "PIDFile=/run/cfn-hup.pid"
+        echo ""
+        echo "[Install]"
+        echo "WantedBy=multi-user.target"
+      ) "${SVC_FILE}" || \
+        err_exit "Failed installing systemd unit-file for ${SVC_NAME}"
+    fi
+
+    if [[ ! -d ${CHROOTMNT}/etc/cfn ]]
+    then
+      err_exit "Creating /etc/cfn directory" NONE
+      install -Z "system_u:object_r:etc_t:s0" -dDm 0755 -o root \
+        -g root /etc/cfn || err_exit "Failed creating /etc/cfn directory" NONE
+    fi
+
+    chroot "${CHROOTMNT}" /usr/bin/systemctl disable "${SVC_NAME}.service" || \
+      err_exit "FAILED"
+  fi
+
+  return
 }
 
 # shellcheck disable=SC2016,SC1003
