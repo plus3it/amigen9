@@ -278,6 +278,32 @@ function ConfigureNetworking {
   chroot "${CHROOTMNT}" systemctl enable NetworkManager
 }
 
+# EL9 is more annoying about SysV-isms
+function ConfigureRcLocalGenerator {
+  local GENERATOR_DIR="${CHROOTMNT}/etc/systemd/system-generators"
+  local GENERATOR_FIL="${GENERATOR_DIR}/systemd-rc-local-generator"
+
+  # Ensure systemd file is present
+  if [[ ! -f ${GENERATOR_FIL} ]]
+  then
+    printf "Creating %s... " "${GENERATOR_DIR}"
+    install -Z "system_u:object_r:etc_t:s0" -dDm 0755 -o root -g root \
+      "${GENERATOR_DIR}" || err_exit "Failed creating ${GENERATOR_DIR}"
+    echo "Success!"
+
+    printf "Creating %s... " "${GENERATOR_FIL}"
+    install -bDm 0600 -o root -g root /dev/null "${GENERATOR_FIL}" || \
+      err_exit "Failed creating ${GENERATOR_FIL}"
+    echo "Success!"
+
+    printf "Setting SELinux label on %s... " "${GENERATOR_FIL}"
+    chcon -u system_u -r object_r -t etc_t "${GENERATOR_FIL}" || \
+      err_exit "Failed creating ${GENERATOR_FIL}"
+    echo "Success!"
+  fi
+}
+
+
 # Firewalld config
 function FirewalldSetup {
   err_exit "Setting up baseline firewall rules..." NONE
@@ -660,6 +686,9 @@ CreateFstab
 
 # Set /tmp as a tmpfs
 SetupTmpfs
+
+# Ensure no systemd-rc-local-generator log-spamming
+ConfigureRcLocalGenerator
 
 # Configure logging
 ConfigureLogging
