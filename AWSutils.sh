@@ -351,8 +351,8 @@ function InstallCfnBootstrap {
       err_exit "Failed making cfn-hup service executable"
 
     err_exit "Using alternatives to configure cfn-hup symlink and initscript..." NONE
-    chroot "${CHROOTMNT}" alternatives --verbose --install /opt/aws/bin/cfn-hup cfn-hup /usr/local/bin/cfn-hup 1 --initscript cfn-hup || \
-      err_exit "Failed configuring cfn-hup symlink and initscript"
+    chroot "${CHROOTMNT}" alternatives --verbose --install /opt/aws/bin/cfn-hup cfn-hup /usr/local/bin/cfn-hup 1 || \
+      err_exit "Failed configuring cfn-hup symlink"
 
     # Install systemd-supporting content
     InstallCfnBootstrap_systemd
