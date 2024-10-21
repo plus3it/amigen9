@@ -418,10 +418,6 @@ function InstallCfnBootstrap_systemd {
 
     chroot "${CHROOTMNT}" /usr/bin/systemctl disable "${SVC_NAME}.service" || \
       err_exit "FAILED"
-
-    err_exit "Get rid of SysV-init file... " NONE
-    rm "${CHROOTMNT}/etc/init.d/${SVC_NAME}" || \
-      err_exit "FAILED"
   fi
 
   return
