@@ -202,7 +202,7 @@ function CleanChrootDiskPrtTbl {
   local PDEV
 
   HAS_PARTS="$(
-    parted -s "${CHROOTDEV}" print | \
+    parted -s "${CHROOTDEV}" print || true | \
     sed -e '1,/^Number/d' \
         -e '/^$/d'
   )"
