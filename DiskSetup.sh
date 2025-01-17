@@ -197,11 +197,10 @@ function CarveBare {
 }
 
 function CleanChrootDiskPrtTbl {
-  local HAS_PARTS
   local PART_NUM
   local PDEV
 
-  
+
   # Exit if there's no VTOC to clear
   if [[ $( parted -s "${CHROOTDEV}" print > /dev/null 2>&1 )$? -ne 0 ]]
   then
