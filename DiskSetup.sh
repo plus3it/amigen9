@@ -197,12 +197,18 @@ function CarveBare {
 }
 
 function CleanChrootDiskPrtTbl {
+  local HAS_PARTS
   local PART_NUM
   local PDEV
 
+  HAS_PARTS="$(
+    parted -s "${CHROOTDEV}" print | \
+    sed -e '1,/^Number/d' \
+        -e '/^$/d'
+  )"
 
-  # Exit if there's no VTOC to clear
-  if [[ $( parted -s "${CHROOTDEV}" print > /dev/null 2>&1 )$? -ne 0 ]]
+  # Ensure there's actually partitions to clear
+  if [[ -z ${HAS_PARTS:-} ]]
   then
     echo "Disk has no partitions to clear"
     return
