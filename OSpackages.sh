@@ -155,6 +155,12 @@ function GetDefaultRepos {
         extras
       )
       ;;
+    system-release) # Amazon should be shot for this
+      BASEREPOS=(
+        amazonlinux
+        kernel-livepatch
+      )
+      ;;
     *)
       echo "Unknown OS. Aborting" >&2
       exit 1
