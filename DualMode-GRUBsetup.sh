@@ -2,7 +2,12 @@
 set -eo pipefail
 set -x
 
-EFI_HOME="$( rpm -ql grub2-common | grep '/EFI/' )"
+if [[ $(  rpm -q --quiet efi-filesystem )$? -eq 0 ]]
+then
+  EFI_HOME="$( rpm -ql efi-filesystem | grep -E '/EFI/[a-z]' )"
+else
+  EFI_HOME="$( rpm -ql grub2-common | grep '/EFI/' )"
+fi
 GRUB_HOME=/boot/grub2
 
 # Re-Install RPMs as necessary
