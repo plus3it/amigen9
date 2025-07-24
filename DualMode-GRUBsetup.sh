@@ -92,3 +92,26 @@ esac
 
 # Install the /boot/grub2/i386-pc content
 grub2-install --target i386-pc "${GRUB_TARG}"
+
+# Install the EFI content for x86_64
+if  [[ -s /etc/amazon-linux-release ]] &&
+    [[ -d /sys/firmware/efi/ ]]
+then
+  # Nuke conflicting grub.cfg files
+  find /boot/efi/EFI -type f -name grub.cfg | xargs rm
+
+  # Ensure the boot files are present and in proper state
+  dnf reinstall -y \
+    efi-filesystem \
+    grub2-common \
+    grub2-efi-x64 \
+    grub2-efi-x64-cdboot \
+    grub2-efi-x64-ec2 \
+    grub2-efi-x64-modules
+
+  # Ensure boot-manager entry is present
+  if [[ $( efibootmgr | grep -q 'Amazon with FIPS' )$? -ne 0 ]]
+  then
+    efibootmgr -c -d "${GRUB_TARG}" -L 'AL2023 with FIPS' -l '\EFI\amzn\grubx64.efi'
+  fi
+fi

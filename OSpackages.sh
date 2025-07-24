@@ -328,11 +328,12 @@ function MainInstall {
       if [[ $( grep -q 'Amazon Linux' /etc/os-release )$? -eq 0 ]]
       then
         INCLUDEPKGS+=(
+          dosfstools
+          efi-filesystem
           grub2-efi-x64-ec2
           selinux-policy
           selinux-policy-targeted
           yum
-          efi-filesystem
         )
       else
         INCLUDEPKGS+=(
@@ -370,7 +371,7 @@ function MainInstall {
 
   # Install packages
   YUMCMD+="$( IFS=' ' ; echo "${INCLUDEPKGS[*]}" )"
-  ${YUMCMD} -x "$( IFS=',' ; echo "${EXCLUDEPKGS[*]}" )"
+  ${YUMCMD} --allowerasing -x "$( IFS=',' ; echo "${EXCLUDEPKGS[*]}" )"
 
   # Verify installation
   err_exit "Verifying installed RPMs" NONE

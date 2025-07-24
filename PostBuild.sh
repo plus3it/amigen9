@@ -441,7 +441,7 @@ function GrubSetup {
 
   # Reinstall the grub-related RPMs (just in case)
   err_exit "Reinstalling the GRUB-related RPMs ..." NONE
-  dnf reinstall -y shim-x64 grub2-\* || \
+  dnf reinstall -y efi-filesystem shim-x64 grub2-\* || \
     err_exit "Failed while reinstalling the GRUB-related RPMs" NONE
   err_exit "GRUB-related RPMs reinstalled"  NONE
 
