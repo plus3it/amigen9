@@ -98,7 +98,7 @@ if  [[ -s /etc/amazon-linux-release ]] &&
     [[ -d /sys/firmware/efi/ ]]
 then
   # Nuke conflicting grub.cfg files
-  find /boot/efi/EFI -type f -name grub.cfg | xargs rm
+  find /boot/efi/EFI -type f -name grub.cfg -print0 | xargs -0 rm
 
   # Ensure the boot files are present and in proper state
   dnf reinstall -y \
