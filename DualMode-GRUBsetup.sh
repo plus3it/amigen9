@@ -114,4 +114,10 @@ then
   then
     efibootmgr -c -d "${GRUB_TARG}" -L 'AL2023 with FIPS' -l '\EFI\amzn\grubx64.efi'
   fi
+
+  # Stricter SEL config
+  printf "Fixing SELinux mode... "
+  sed -i '/^SELINUX=permissive/s/=.*/=enforcing/' /etc/selinux/config || \
+    ( echo FAILED ; exit 1 )
+  echo "Success!"
 fi
