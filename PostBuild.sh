@@ -251,18 +251,21 @@ function ConfigureLogging {
 function ConfigureNetworking {
 
   # Set up ifcfg-eth0 file
-  err_exit "Setting up ifcfg-eth0 file..." NONE
-  (
-    printf 'DEVICE="eth0"\n'
-    printf 'BOOTPROTO="dhcp"\n'
-    printf 'ONBOOT="yes"\n'
-    printf 'TYPE="Ethernet"\n'
-    printf 'USERCTL="yes"\n'
-    printf 'PEERDNS="yes"\n'
-    printf 'IPV6INIT="no"\n'
-    printf 'PERSISTENT_DHCLIENT="1"\n'
-  ) > "${CHROOTMNT}/etc/sysconfig/network-scripts/ifcfg-eth0" || \
-    err_exit "Failed setting up file"
+  if [[ $(  grep -q 'Amazon Linux' /etc/os-release )$? -ne 0 ]]
+  then
+    err_exit "Setting up ifcfg-eth0 file..." NONE
+    (
+      printf 'DEVICE="eth0"\n'
+      printf 'BOOTPROTO="dhcp"\n'
+      printf 'ONBOOT="yes"\n'
+      printf 'TYPE="Ethernet"\n'
+      printf 'USERCTL="yes"\n'
+      printf 'PEERDNS="yes"\n'
+      printf 'IPV6INIT="no"\n'
+      printf 'PERSISTENT_DHCLIENT="1"\n'
+    ) > "${CHROOTMNT}/etc/sysconfig/network-scripts/ifcfg-eth0" || \
+      err_exit "Failed setting up file"
+  fi
 
   # Set up sysconfig/network file
   err_exit "Setting up network file..." NONE
@@ -275,7 +278,10 @@ function ConfigureNetworking {
     err_exit "Failed setting up file"
 
   # Ensure NetworkManager starts
-  chroot "${CHROOTMNT}" systemctl enable NetworkManager
+  if [[ $(  grep -q 'Amazon Linux' /etc/os-release )$? -ne 0 ]]
+  then
+    chroot "${CHROOTMNT}" systemctl enable NetworkManager
+  fi
 }
 
 # EL9 is more annoying about SysV-isms
@@ -435,7 +441,7 @@ function GrubSetup {
 
   # Reinstall the grub-related RPMs (just in case)
   err_exit "Reinstalling the GRUB-related RPMs ..." NONE
-  dnf reinstall -y shim-x64 grub2-\* || \
+  dnf reinstall -y efi-filesystem shim-x64 grub2-\* || \
     err_exit "Failed while reinstalling the GRUB-related RPMs" NONE
   err_exit "GRUB-related RPMs reinstalled"  NONE
 
@@ -454,9 +460,16 @@ function GrubSetup {
   err_exit "BIOS-boot GRUB components installed" NONE
 
   err_exit "Installing GRUB config-file..." NONE
-  chroot "${CHROOTMNT}" /bin/bash -c "/sbin/grub2-mkconfig \
-    -o /boot/grub2/grub.cfg --update-bls-cmdline" || \
-    err_exit "Failed to install GRUB config-file"
+  if [[ $(  grep -q 'Amazon Linux' /etc/os-release )$? -eq 0 ]]
+  then
+    chroot "${CHROOTMNT}" /bin/bash -c "/sbin/grub2-mkconfig \
+      -o /boot/grub2/grub.cfg" || \
+      err_exit "Failed to install GRUB config-file"
+  else
+    chroot "${CHROOTMNT}" /bin/bash -c "/sbin/grub2-mkconfig \
+      -o /boot/grub2/grub.cfg --update-bls-cmdline" || \
+      err_exit "Failed to install GRUB config-file"
+  fi
   err_exit "GRUB config-file installed" NONE
 
   # Make intramfs in chroot-dev
@@ -558,12 +571,19 @@ function SetupTmpfs {
 
 # Disable kdump
 function DisableKdumpSvc {
-  err_exit "Disabling kdump service... " NONE
-  chroot "${CHROOTMNT}" /bin/systemctl disable --now kdump || \
-    err_exit "Failed while disabling kdump service"
+  if [[ $(
+      chroot /mnt/ec2-root/ systemctl is-enabled kdump.service
+    ) == "disabled" ]]
+  then
+    err_exit "The kdump service is not enabled..." NONE
+  else
+    err_exit "Disabling kdump service... " NONE
+    chroot "${CHROOTMNT}" /bin/systemctl disable --now kdump || \
+      err_exit "Failed while disabling kdump service"
+  fi
 
   err_exit "Masking kdump service... " NONE
-  chroot "${CHROOTMNT}" /bin/systemctl mask --now kdump || \
+  chroot "${CHROOTMNT}" /bin/systemctl mask kdump || \
     err_exit "Failed while masking kdump service"
 }
 
@@ -712,10 +732,16 @@ GrubSetup
 GrubSetup_BIOS
 
 # Initialize authselect subsystem
-authselectInit
+if [[ $( chroot "${CHROOTMNT}" rpm -q --quiet authselect )$? -eq 0 ]]
+then
+  authselectInit
+fi
 
 # Wholly disable kdump service
-DisableKdumpSvc
+if [[ -e ${CHROOTMNT}/usr/lib/systemd/system/kdump.service ]]
+then
+  DisableKdumpSvc
+fi
 
 # Clean up yum/dnf history
 CleanHistory

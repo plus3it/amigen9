@@ -2,7 +2,12 @@
 set -eo pipefail
 set -x
 
-EFI_HOME="$( rpm -ql grub2-common | grep '/EFI/' )"
+if [[ $(  rpm -q --quiet efi-filesystem )$? -eq 0 ]]
+then
+  EFI_HOME="$( rpm -ql efi-filesystem | grep -E '/EFI/[a-z]' )"
+else
+  EFI_HOME="$( rpm -ql grub2-common | grep '/EFI/' )"
+fi
 GRUB_HOME=/boot/grub2
 
 # Re-Install RPMs as necessary
@@ -87,3 +92,32 @@ esac
 
 # Install the /boot/grub2/i386-pc content
 grub2-install --target i386-pc "${GRUB_TARG}"
+
+# Install the EFI content for x86_64
+if  [[ -s /etc/amazon-linux-release ]] &&
+    [[ -d /sys/firmware/efi/ ]]
+then
+  # Nuke conflicting grub.cfg files
+  find /boot/efi/EFI -type f -name grub.cfg -print0 | xargs -0 rm
+
+  # Ensure the boot files are present and in proper state
+  dnf reinstall -y \
+    efi-filesystem \
+    grub2-common \
+    grub2-efi-x64 \
+    grub2-efi-x64-cdboot \
+    grub2-efi-x64-ec2 \
+    grub2-efi-x64-modules
+
+  # Ensure boot-manager entry is present
+  if [[ $( efibootmgr | grep -q 'Amazon with FIPS' )$? -ne 0 ]]
+  then
+    efibootmgr -c -d "${GRUB_TARG}" -L 'AL2023 with FIPS' -l '\EFI\amzn\grubx64.efi'
+  fi
+
+  # Stricter SEL config
+  printf "Fixing SELinux mode... "
+  sed -i '/^SELINUX=permissive/s/=.*/=enforcing/' /etc/selinux/config || \
+    ( echo FAILED ; exit 1 )
+  echo "Success!"
+fi

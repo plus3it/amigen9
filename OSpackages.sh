@@ -14,8 +14,6 @@ GRUBPKGS_ARM=(
       grub2-tools
       grub2-tools-extra
       grub2-tools-minimal
-      shim-aa64
-      shim-unsigned-aarch64
 )
 GRUBPKGS_X86=(
       grub2-efi-x64
@@ -24,13 +22,11 @@ GRUBPKGS_X86=(
       grub2-tools
       grub2-tools-efi
       grub2-tools-minimal
-      shim-x64
 )
 MINXTRAPKGS=(
   chrony
   cloud-init
   cloud-utils-growpart
-  dhcp-client
   dracut-config-generic
   efibootmgr
   firewalld
@@ -153,6 +149,12 @@ function GetDefaultRepos {
         appstream
         baseos
         extras
+      )
+      ;;
+    system-release) # Amazon should be shot for this
+      BASEREPOS=(
+        amazonlinux
+        kernel-livepatch
       )
       ;;
     *)
@@ -323,6 +325,22 @@ function MainInstall {
         "${EXTRARPMS[@]}"
         "${GRUBPKGS_X86[@]}"
       )
+      if [[ $( grep -q 'Amazon Linux' /etc/os-release )$? -eq 0 ]]
+      then
+        INCLUDEPKGS+=(
+          dosfstools
+          efi-filesystem
+          grub2-efi-x64-ec2
+          selinux-policy
+          selinux-policy-targeted
+          yum
+        )
+      else
+        INCLUDEPKGS+=(
+          shim-x64
+          dhcp-client
+        )
+      fi
       ;;
     aarch64)
       INCLUDEPKGS=(
@@ -331,6 +349,14 @@ function MainInstall {
         "${EXTRARPMS[@]}"
         "${GRUBPKGS_ARM[@]}"
       )
+      if [[ $( grep -q 'Amazon Linux' /etc/os-release )$? -ne 0 ]]
+      then
+        INCLUDEPKGS+=(
+          shim-aa64
+          shim-unsigned-aarch64
+          dhcp-client
+        )
+      fi
       ;;
     *)
       err_exit "Architecture not yet supported" 1
@@ -345,7 +371,7 @@ function MainInstall {
 
   # Install packages
   YUMCMD+="$( IFS=' ' ; echo "${INCLUDEPKGS[*]}" )"
-  ${YUMCMD} -x "$( IFS=',' ; echo "${EXCLUDEPKGS[*]}" )"
+  ${YUMCMD} --allowerasing -x "$( IFS=',' ; echo "${EXCLUDEPKGS[*]}" )"
 
   # Verify installation
   err_exit "Verifying installed RPMs" NONE

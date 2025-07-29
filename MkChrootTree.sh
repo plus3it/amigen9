@@ -216,6 +216,7 @@ function PrepSpecialDevs {
       /\/user\//d
       /\/mapper\//d
       /^cgroup/d
+      /boot\/efi/d
     }' | awk '{ print $2 }' | sort -u | while read -r BINDDEV
   do
     # Create mountpoints in chroot-env
