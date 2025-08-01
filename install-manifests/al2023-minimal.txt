@@ -288,4 +288,3 @@ glibc-locale-source
 grub2-pc-modules
 rootfiles
 sysctl-defaults
-gpg-pubkey
