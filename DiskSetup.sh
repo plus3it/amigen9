@@ -230,7 +230,10 @@ function CleanChrootDiskPrtTbl {
   then
     for PDEV in $( blkid | grep "${CHROOTDEV}" | sed 's/:.*$//' )
     do
-      PART_NUM="${PDEV//*xvd?/}"
+      PART_NUM="$(
+        sed -e 's#/dev/xvd.##' \
+            -e 's#/dev/sd.##' <<< "${PDEV}"
+      )"
 
       printf "Deleting partition %s from %s... " "${PART_NUM}" "${CHROOTDEV}"
       parted -sf "${CHROOTDEV}" rm "${PART_NUM}"
