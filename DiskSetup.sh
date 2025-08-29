@@ -225,7 +225,8 @@ function CleanChrootDiskPrtTbl {
       echo SUCCESS
     done
   # Iteratively nuke partitions from Xen Virtual Disk devices
-  elif [[ ${CHROOTDEV} == "/dev/xvd"* ]]
+  elif [[ ${CHROOTDEV} == "/dev/xvd"* ]] ||
+       [[ ${CHROOTDEV} == "/dev/sd"* ]]
   then
     for PDEV in $( blkid | grep "${CHROOTDEV}" | sed 's/:.*$//' )
     do
