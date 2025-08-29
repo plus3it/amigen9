@@ -225,11 +225,15 @@ function CleanChrootDiskPrtTbl {
       echo SUCCESS
     done
   # Iteratively nuke partitions from Xen Virtual Disk devices
-  elif [[ ${CHROOTDEV} == "/dev/xvd"* ]]
+  elif  [[ ${CHROOTDEV} == "/dev/xvd"* ]] ||
+        [[ ${CHROOTDEV} == "/dev/sd"* ]]
   then
     for PDEV in $( blkid | grep "${CHROOTDEV}" | sed 's/:.*$//' )
     do
-      PART_NUM="${PDEV//*xvd?/}"
+      PART_NUM="$(
+        sed -e 's#/dev/xvd.##' \
+            -e 's#/dev/sd.##' <<< "${PDEV}"
+      )"
 
       printf "Deleting partition %s from %s... " "${PART_NUM}" "${CHROOTDEV}"
       parted -sf "${CHROOTDEV}" rm "${PART_NUM}"
