@@ -25,7 +25,7 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
     ~~~
     ./XdistroSetup.sh -d RockyLinux \
       -k https://download.rockylinux.org/pub/rocky/RPM-GPG-KEY-rockyofficial \
-      -r https://download.rockylinux.org/pub/rocky/8/BaseOS/x86_64/os/Packages/r/rocky-release-8.5-2.el8.noarch.rpm,https://download.rockylinux.org/pub/rocky/8/BaseOS/x86_64/os/Packages/r/rocky-repos-8.5-2.el8.noarch.rpm
+      -r https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-release-9.6-1.3.el9.noarch.rpm,https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-repos-9.6-1.3.el9.noarch.rpm
     ~~~
 1. (Optional) Clean up target-disk by executing:
     ~~~
