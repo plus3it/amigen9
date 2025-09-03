@@ -8,13 +8,13 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
 
 ## Execute a `chroot()`-style build
 
-1. Launch an EL8 AMI (probably RHEL8), ensuring that a secondary disk of at least 8GiB in size is attached
+1. Launch an EL9 AMI (probably RHEL9), ensuring that a secondary disk of at least 8GiB in size is attached
 1. Install the `@development` package-group to the resultant EC2
 1. Login to the EC2
 1. Change to the `root` user (e.g., `sudo -i`)
 1. Generate an RPM manifest suitable for your distro-clone (the ones marked `Mandatory` and `Default` from CentOS8 stream should be sufficient)
-1. Clone the AMIgen8 project (this project) to the `root` user's `${HOME}`
-1. Navigate into the AMIgen8 project-root (e.g., `cd AMIgen8`)
+1. Clone the AMIgen9 project (this project) to the `root` user's `${HOME}`
+1. Navigate into the AMIgen9 project-root (e.g., `cd AMIgen9`)
 1. Use the `XdistroSetup.sh` script to stage the necessary alternate-disto GPG and repository files to the build-environment:
     ~~~
     ./XdistroSetup.sh -d <DISTRO_NAME> \
@@ -245,4 +245,4 @@ As of this document's author date, the `OSpackages.sh` script's repository-defin
 
 ## Oracle Linux
 
-Due to issues encountered with Oracle's RHEL8 clone's RPMs and repositories, this project's contents do not currently support use for generating Oracle bootstrap (or "final") AMIs. Please feel free to contribute relevant content.
+Due to issues encountered with Oracle's RHEL9 clone's RPMs and repositories, this project's contents do not currently support use for generating Oracle bootstrap (or "final") AMIs. Please feel free to contribute relevant content.
