@@ -106,26 +106,28 @@ Once the above, `chroot()`-style build to the secondary volume has successfully 
                 "DeleteOnTermination": true,
                 "SnapshotId": "__SNAPSHOT_ID__",
                 "VolumeSize": __SIZE__,
-                "VolumeType": "gp2"
+                "VolumeType": "gp3"
             }
         }
     ]
     ~~~
-    Note: `gp2` is the "normal" value. However, any EBS-type that's valid for the partition/region can be substituted. Simply be aware that select other than `gp2` may limit the instance-types that the resultant AMI can be launched as.
+    Note: `gp3` is the "normal" value. However, any EBS-type that's valid for the partition/region can be substituted. Simply be aware that select other than `gp3` may limit the instance-types that the resultant AMI can be launched as.
 1. Monitor the snapshot's creation.
 1. When the snapshot completes, register an image of it with something like:
     ~~~
     aws ec2 register-image \
-      --virtualization-type hvm \
       --architecture x86_64 \
-      --ena-support \
-      --sriov-net-support simple \
-      --root-device-name /dev/sda1 \
       --block-device-mappings "$(
-          sed -e 's/__SIZE__/8/' -e 's/__SNAPSHOT_ID_/<SNAP_ID_FROM_1>/' /root/blockmap.json
+          sed -e 's/__SIZE__/8/' \
+              -e 's/__SNAPSHOT_ID__/<SNAP_ID_FROM_1>/' \
+            .../blockmap.json
         )" \
-      --name "MyBootstrapAMI-YYYY.MM.N.x86_64-gp2" \
-      --description "\"boostrap\" image for Rocky Linux 9.6 (current through 2025-09-04)"
+      --description "\"boostrap\" image for Rocky Linux 9.6 (current through $( date '+%Y-%m-%d' ))" \
+      --ena-support \
+      --name "spel-bootstrap-rl-9-hvm-$( date '+%Y.%m' ).1.x86_64-gp3" \
+      --root-device-name /dev/sda1 \
+      --sriov-net-support simple \
+      --virtualization-type hvm
     ~~~
 
 ## Validate Image
