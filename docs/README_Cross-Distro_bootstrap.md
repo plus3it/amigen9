@@ -12,7 +12,7 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
 1. Install the `@development` package-group to the resultant EC2
 1. Login to the EC2
 1. Change to the `root` user (e.g., `sudo -i`)
-1. Generate an RPM manifest suitable for your distro-clone (the ones marked `Mandatory` and `Default` from CentOS8 stream should be sufficient)
+1. Generate an RPM manifest suitable for your distro-clone (the ones marked `Mandatory` and `Default` from CentOS9 stream should be sufficient)
 1. Clone the AMIgen9 project (this project) to the `root` user's `${HOME}`
 1. Navigate into the AMIgen9 project-root (e.g., `cd AMIgen9`)
 1. Use the `XdistroSetup.sh` script to stage the necessary alternate-disto GPG and repository files to the build-environment:
@@ -21,12 +21,15 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
       -k <URL_TO_GPG_KEYFILE_1>,<URL_TO_GPG_KEYFILE_2>,...,<URL_TO_GPG_KEYFILE_n>, \
       -r <URL_TO_DISTRO_RELEASE_FILE_1>,<URL_TO_DISTRO_RELEASE_FILE_2>,...,<URL_TO_DISTRO_RELEASE_FILE_n>,
     ~~~
-    For Rocky Linux 8, this would look something like:
+    For Rocky Linux 9, this would look something like:
     ~~~
     ./XdistroSetup.sh -d RockyLinux \
       -k https://download.rockylinux.org/pub/rocky/RPM-GPG-KEY-rockyofficial \
       -r https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-release-9.6-1.3.el9.noarch.rpm,https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-repos-9.6-1.3.el9.noarch.rpm
     ~~~
+1. Pull down the target-distro's repository GPG-key:
+    * For Rocky, use the URL https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9
+    * For Alma, use the URL https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux-9
 1. (Optional) Clean up target-disk by executing:
     ~~~
     ./Umount.sh -C <TARGET_DEV>
@@ -46,19 +49,19 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
       -m /mnt/ec2-root -r /root/RPM/<DISTRO_NAME>/<DISTRO_RELEASE_RPM> \
       -X -M <MANIFEST_FILE>
     ~~~
-    For Rocky Linux 8, this would look something like:
+    For Rocky Linux 9, this would look something like:
     ~~~
-    ./OSpackages.sh -a baseos,appstream,extras \
-      -m /mnt/ec2-root -X \
-      -r /root/RPM/RockyLinux/rocky-repos-8.5-2.el8.noarch.rpm,/root/RPM/RockyLinux/rocky-release-8.5-2.el8.noarch.rpm \
-      -x subscription-manager,redhat-rpm-config,rhn-check,rhn-client-tools,rhn-setup,rhnlib,rhnsd \
-      -M <PATH_TO_MANIFEST_FILE>
+    ./OSpackages.sh -X -a baseos,appstream,extras \
+      -M install-manifests/rhel9-clones.txt \
+      -m /mnt/ec2-root \
+      -r /root/RPM/RockyLinux/rocky-repos-9.6-1.3.el9.noarch.rpm,/root/RPM/RockyLinux/rocky-release-9.6-1.3.el9.noarch.rpm \
+      -x subscription-manager,redhat-rpm-config,rhn-check,rhn-client-tools,rhn-setup,rhnlib,rhnsd 
     ~~~
     Note: Due to environment-inheritance when using a RHUI-enabled AMI, it's necessary to:
     * Exclude (with `-x`) all RPMs related to RHUI-enablement
     * Use a manifest-file rather than the groups-metadata that come from the RHUI repos
     * Staging the RPMs referenced with the `-r` flag is optional: if your build-host is able to pull those files from an anonymous repo, then the `-r` can be pointed to the relevant URLs. See per-platform notes below.
-    * If bootstrapping to Oracle Linux 8, it will be necessary to export the `DNF_VAR_ocidomain` and `DNF_VAR_ociregion` environment variables. If using Oracle's public repositories, the values are `oracle.com` and `""`, respectively
+    * If bootstrapping to Oracle Linux 9, it will be necessary to export the `DNF_VAR_ocidomain` and `DNF_VAR_ociregion` environment variables. If using Oracle's public repositories, the values are `oracle.com` and `""`, respectively
 
 1. (Optional) Install the AWS utilities by executing:
     ~~~
@@ -74,7 +77,7 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
       -s https://s3.us-east-1.amazonaws.com/amazon-ssm-us-east-1/latest/linux_amd64/amazon-ssm-agent.rpm \
       -m /mnt/ec2-root
     ~~~
-    Note: If bootstrapping to Oracle Linux 8, see `DNF_VAR_*` note in the prior step
+    Note: If bootstrapping to Oracle Linux 9, see `DNF_VAR_*` note in the prior step
 1. Apply SELinux labels, install GRUB2 stuff, etc., by executing:
     ~~~
     ./PostBuild.sh -f xfs -m /mnt/ec2-root -X -z <PREFERRED_TIMEZONE>
@@ -122,19 +125,18 @@ Once the above, `chroot()`-style build to the secondary volume has successfully 
           sed -e 's/__SIZE__/8/' -e 's/__SNAPSHOT_ID_/<SNAP_ID_FROM_1>/' /root/blockmap.json
         )" \
       --name "MyBootstrapAMI-YYYY.MM.N.x86_64-gp2" \
-      --description "\"boostrap\" image for Rocky Linux 8.5 (current through 2021-12-21)"
+      --description "\"boostrap\" image for Rocky Linux 9.6 (current through 2025-09-04)"
     ~~~
 
 ## Validate Image
 
 The above processes have been shown to reliably work for:
 
-* Creating a CentOS 8 Core (now deprecated)
-* Creating a CentOS 8 Stream
-* Creating an Alma Linux 8
-* Creating a Rocky Linux 8
+* Creating a CentOS 9 Stream
+* Creating an Alma Linux 9
+* Creating a Rocky Linux 9
 
-When starting from an official Red Hat 8 AMI from the AWS MarketPlace (i.e., one maintained via CSP/Red Hat partnership). While this project has generically validated these scenarios, it is still a good idea to validate your results before trying to use your bootstrap AMI for AMI-building or other purposes. To do so:
+When starting from an official Red Hat 9 AMI from the AWS MarketPlace (i.e., one maintained via CSP/Red Hat partnership). While this project has generically validated these scenarios, it is still a good idea to validate your results before trying to use your bootstrap AMI for AMI-building or other purposes. To do so:
 
 1. Using the AWS CLI or web-console, launch an EC2 from your new bootstrapper AMI:
     * Ensure you launch it with an accessible SSH key
@@ -146,18 +148,24 @@ When starting from an official Red Hat 8 AMI from the AWS MarketPlace (i.e., one
 1. Verify that the EC2 is running the expected Linux-distribution and release-level; executing `cat /etc/os-release` should produce output similar to:
     ~~~
     NAME="Rocky Linux"
-    VERSION="8.5 (Green Obsidian)"
+    VERSION="9.6 (Blue Onyx)"
     ID="rocky"
     ID_LIKE="rhel centos fedora"
-    VERSION_ID="8.5"
-    PLATFORM_ID="platform:el8"
-    PRETTY_NAME="Rocky Linux 8.5 (Green Obsidian)"
+    VERSION_ID="9.6"
+    PLATFORM_ID="platform:el9"
+    PRETTY_NAME="Rocky Linux 9.6 (Blue Onyx)"
     ANSI_COLOR="0;32"
-    CPE_NAME="cpe:/o:rocky:rocky:8:GA"
+    LOGO="fedora-logo-icon"
+    CPE_NAME="cpe:/o:rocky:rocky:9::baseos"
     HOME_URL="https://rockylinux.org/"
+    VENDOR_NAME="RESF"
+    VENDOR_URL="https://resf.org/"
     BUG_REPORT_URL="https://bugs.rockylinux.org/"
-    ROCKY_SUPPORT_PRODUCT="Rocky Linux"
-    ROCKY_SUPPORT_PRODUCT_VERSION="8"
+    SUPPORT_END="2032-05-31"
+    ROCKY_SUPPORT_PRODUCT="Rocky-Linux-9"
+    ROCKY_SUPPORT_PRODUCT_VERSION="9.6"
+    REDHAT_SUPPORT_PRODUCT="Rocky Linux"
+    REDHAT_SUPPORT_PRODUCT_VERSION="9.6"
     ~~~
 1. Verify that FIPS-mode is set as expected (`cat /proc/sys/crypto/fips_enabled`). By default, FIPS-mode will be enabled
 1. Verify that the system consists of a single partition (e.g., `df -PHt xfs`)
@@ -187,18 +195,18 @@ When starting from an official Red Hat 8 AMI from the AWS MarketPlace (i.e., one
     ~~~
 1. Verify that the EC2 can talk to its `yum` repositories; executing `yum repoinfo | grep -E '^Repo-(name|pkgs)'` should produce output similar to:
     ~~~
-    Last metadata expiration check: 0:01:00 ago on Tue Dec 21 16:02:16 2021.
-    Repo-name          : Rocky Linux 8 - AppStream
+    Last metadata expiration check: 0:01:00 ago on Thu Sep  4 11:06:14 UTC 2025.
+    Repo-name          : Rocky Linux 9 - AppStream
     Repo-pkgs          : 6677
-    Repo-name          : Rocky Linux 8 - BaseOS
+    Repo-name          : Rocky Linux 9 - BaseOS
     Repo-pkgs          : 1837
-    Repo-name          : Rocky Linux 8 - Extras
+    Repo-name          : Rocky Linux 9 - Extras
     Repo-pkgs          : 37
     ~~~
 1. Verify that the new AMI is fully up-to-date:
     ~~~
     # yum list updates
-    Last metadata expiration check: 0:07:11 ago on Tue Dec 21 16:02:16 2021.
+    Last metadata expiration check: 0:01:00 ago on Thu Sep  4 11:06:14 UTC 2025.
     #
     ~~~
     Note: If there are updates available, it's best to generate a new boostrap AMI and re-verify.
@@ -224,10 +232,10 @@ When starting from an official Red Hat 8 AMI from the AWS MarketPlace (i.e., one
 
 ## Alma Linux
 
-As of this document's author-date, only the `almalinux-release-8.5-3.el8.x86_64.rpm` is needed for the `OSpackages.sh` script's repository-definition files (`-r`)
+As of this document's author-date, only the `almalinux-release-latest-9.x86_64.rpm` is needed for the `OSpackages.sh` script's repository-definition files (`-r`)
 
 
-## CentOS 8 Stream
+## CentOS 9 Stream
 
 As of this document's author date, the `OSpackages.sh` script's repository-definition files (`-r`) need to include:
 
