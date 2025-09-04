@@ -25,7 +25,7 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
     ~~~
     ./XdistroSetup.sh -d RockyLinux \
       -k https://download.rockylinux.org/pub/rocky/RPM-GPG-KEY-rockyofficial \
-      -r https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-release-9.6-1.3.el9.noarch.rpm,https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-repos-9.6-1.3.el9.noarch.rpm
+      -r https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-release-9.6-1.3.el9.noarch.rpm,https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-repos-9.6-1.3.el9.noarch.rpm,https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-gpg-keys-9.6-1.3.el9.noarch.rpm
     ~~~
 1. Pull down the target-distro's repository GPG-key:
     * For Rocky, use the URL https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9
