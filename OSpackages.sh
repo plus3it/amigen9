@@ -225,6 +225,7 @@ function PrepChroot {
   fi
 
   # Clean out stale RPMs
+  # shellcheck disable=SC2327,SC2328
   if [[ $( stat /tmp/*.rpm > /dev/null 2>&1 )$? -eq 0 ]]
   then
     err_exit "Cleaning out stale RPMs..." NONE
@@ -258,6 +259,13 @@ function PrepChroot {
   err_exit "Installing staged RPMs..." NONE
   rpm --force --root "${CHROOTMNT}" -ivh --nodeps --nopre /tmp/*.rpm || \
     err_exit "Failed installing staged RPMs"
+
+  # Work around recent gimpiness in yum RPM
+  if [[ -d ${CHROOTMNT}/etc/yum/pluginconf.d ]]
+  then
+    echo "Deleting ${CHROOTMNT}/etc/yum/pluginconf.d"
+    rm -rf "${CHROOTMNT}/etc/yum/pluginconf.d"
+  fi
 
   # Install dependences for base RPMs
   err_exit "Installing base RPM's dependences..." NONE

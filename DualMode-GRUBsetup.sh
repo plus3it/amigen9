@@ -84,6 +84,9 @@ case "${GRUB_TARG}" in
   /dev/xvd*)
     GRUB_TARG="${GRUB_TARG::-1}"
     ;;
+  /dev/sd*)
+    GRUB_TARG="${GRUB_TARG::-1}"
+    ;;
   *)
     echo "Unsupported disk-type. Aborting..."
     exit 1
