@@ -263,9 +263,16 @@ function SetupBootParts {
 
   # Make filesystem for /boot
   err_exit "Creating filesystem on ${CHROOTDEV}${PARTPRE:-}3..." NONE
-  mkfs -t "${FSTYPE}" "${MKFSFORCEOPT}" -L "${LABEL_BOOT}" \
-    "${CHROOTDEV}${PARTPRE:-}3" || \
-    err_exit "Failed creating filesystem"
+  if [[ $( uname -r ) =~ amzn2023 ]]
+  then
+    mkfs -t "${FSTYPE}" "${MKFSFORCEOPT}" -L "${LABEL_BOOT}" \
+      -i nrext64=0 "${CHROOTDEV}${PARTPRE:-}3" || \
+      err_exit "Failed creating filesystem"
+  else
+    mkfs -t "${FSTYPE}" "${MKFSFORCEOPT}" -L "${LABEL_BOOT}" \
+      "${CHROOTDEV}${PARTPRE:-}3" || \
+      err_exit "Failed creating filesystem"
+  fi
 }
 
 
