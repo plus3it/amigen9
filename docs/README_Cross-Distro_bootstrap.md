@@ -24,12 +24,97 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
     For Rocky Linux 9, this would look something like:
     ~~~
     ./XdistroSetup.sh -d RockyLinux \
-      -k https://download.rockylinux.org/pub/rocky/RPM-GPG-KEY-rockyofficial \
-      -r https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-release-9.6-1.3.el9.noarch.rpm,https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-repos-9.6-1.3.el9.noarch.rpm,https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-gpg-keys-9.6-1.3.el9.noarch.rpm
+      -k https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-gpg-keys-9.7-1.5.el9.noarch.rpm,https://download.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9 \
+      -r https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-gpg-keys-9.7-1.5.el9.noarch.rpm,https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-release-9.7-1.5.el9.noarch.rpm,https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/Packages/r/rocky-repos-9.7-1.5.el9.noarch.rpm
     ~~~
-1. Pull down the target-distro's repository GPG-key:
-    * For Rocky, use the URL https://dl.rockylinux.org/pub/rocky/RPM-GPG-KEY-Rocky-9
-    * For Alma, use the URL https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux-9
+    For Alma Linux 9, this would look something like:
+    ~~~
+    ./XdistroSetup.sh -d AlmaLinux \
+      -k https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux-9,https://repo.almalinux.org/almalinux/9/BaseOS/x86_64/os/Packages/almalinux-gpg-keys-9.7-1.el9.x86_64.rpm \
+      -r https://repo.almalinux.org/almalinux/9/BaseOS/x86_64/os/Packages/almalinux-gpg-keys-9.7-1.el9.x86_64.rpm,https://repo.almalinux.org/almalinux/9/BaseOS/x86_64/os/Packages/almalinux-release-9.7-1.el9.x86_64.rpm,https://repo.almalinux.org/almalinux/9/BaseOS/x86_64/os/Packages/almalinux-repos-9.7-1.el9.x86_64.rpm
+    ~~~
+    After the `XdistroSetup.sh` script is run, the bootstrap-builder should look similar to:
+    ~~~
+    # find /root/RPM/
+    /root/RPM/
+    /root/RPM/RockyLinux
+    /root/RPM/RockyLinux/rocky-gpg-keys-9.7-1.5.el9.noarch.rpm
+    /root/RPM/RockyLinux/rocky-release-9.7-1.5.el9.noarch.rpm
+    /root/RPM/RockyLinux/rocky-repos-9.7-1.5.el9.noarch.rpm
+    /root/RPM/AlmaLinux
+    /root/RPM/AlmaLinux/almalinux-gpg-keys-9.7-1.el9.x86_64.rpm
+    /root/RPM/AlmaLinux/almalinux-release-9.7-1.el9.x86_64.rpm
+    /root/RPM/AlmaLinux/almalinux-repos-9.7-1.el9.x86_64.rpm
+    
+    # find /etc/pki/rpm-gpg/
+    /etc/pki/rpm-gpg/
+    /etc/pki/rpm-gpg/<BUILDER_OS_KEY_1>
+    /etc/pki/rpm-gpg/<BUILDER_OS_KEY_2>
+    /etc/pki/rpm-gpg/...
+    /etc/pki/rpm-gpg/<BUILDER_OS_KEY_N>
+    /etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
+    /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9
+    ~~~
+1. De-archive the `*-repos-*` RPMs. This will look something like:
+    ~~~
+    # rpm2cpio /root/RPM/RockyLinux/rocky-repos-9.7-1.5.el9.noarch.rpm | cpio -idv
+    ./etc/dnf/vars/contentdir
+    ./etc/dnf/vars/rltype
+    ./etc/dnf/vars/sigcontentdir
+    ./etc/dnf/vars/stream
+    ./etc/yum.repos.d/rocky-addons.repo
+    ./etc/yum.repos.d/rocky-devel.repo
+    ./etc/yum.repos.d/rocky-extras.repo
+    ./etc/yum.repos.d/rocky.repo
+    ./usr/share/licenses/rocky-repos
+    ./usr/share/licenses/rocky-repos/LICENSE
+    34 blocks
+
+    # rpm2cpio /root/RPM/AlmaLinux/almalinux-repos-9.7-1.el9.x86_64.rpm | cpio -idv
+    cpio: ./etc/dnf/vars/stream not created: newer or same age version exists
+    ./etc/dnf/vars/stream
+    ./etc/yum.repos.d/almalinux-appstream.repo
+    ./etc/yum.repos.d/almalinux-baseos.repo
+    ./etc/yum.repos.d/almalinux-crb.repo
+    ./etc/yum.repos.d/almalinux-extras.repo
+    ./etc/yum.repos.d/almalinux-highavailability.repo
+    ./etc/yum.repos.d/almalinux-nfv.repo
+    ./etc/yum.repos.d/almalinux-plus.repo
+    ./etc/yum.repos.d/almalinux-resilientstorage.repo
+    ./etc/yum.repos.d/almalinux-rt.repo
+    ./etc/yum.repos.d/almalinux-sap.repo
+    ./etc/yum.repos.d/almalinux-saphana.repo
+    26 blocks
+    ~~~
+1. Copy the `./etc/...` files into `/etc`:
+    ~~~
+    # cp -r etc/* /etc
+    cp: overwrite '/etc/dnf/vars/stream'? n
+    ~~~
+1. Verify that the files were properly copied:
+    ~~~
+    # find /etc/yum.repos.d /etc/dnf/ -ctime -1
+    /etc/yum.repos.d
+    /etc/yum.repos.d/rocky-addons.repo
+    /etc/yum.repos.d/rocky-devel.repo
+    /etc/yum.repos.d/rocky-extras.repo
+    /etc/yum.repos.d/rocky.repo
+    /etc/yum.repos.d/almalinux-appstream.repo
+    /etc/yum.repos.d/almalinux-baseos.repo
+    /etc/yum.repos.d/almalinux-crb.repo
+    /etc/yum.repos.d/almalinux-extras.repo
+    /etc/yum.repos.d/almalinux-highavailability.repo
+    /etc/yum.repos.d/almalinux-nfv.repo
+    /etc/yum.repos.d/almalinux-plus.repo
+    /etc/yum.repos.d/almalinux-resilientstorage.repo
+    /etc/yum.repos.d/almalinux-rt.repo
+    /etc/yum.repos.d/almalinux-sap.repo
+    /etc/yum.repos.d/almalinux-saphana.repo
+    /etc/dnf/vars
+    /etc/dnf/vars/contentdir
+    /etc/dnf/vars/rltype
+    /etc/dnf/vars/sigcontentdir
+    ~~~
 1. (Optional) Clean up target-disk by executing:
     ~~~
     ./Umount.sh -C <TARGET_DEV>
@@ -43,6 +128,8 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
     ~~~
     ./MkChrootTree.sh -d <TARGET_DEV> -f xfs -m /mnt/ec2-root --no-lvm
     ~~~
+1. Move all but the target distribution's repository-definition files to a backup location (e.g., `/etc/yum.repos.d/BACKUP`)
+1. Use `dnf repolist` to verify that the target distribution's repository-definitions are active.
 1. Install the OS packages by executing:
     ~~~
     ./OSpackages.sh -a <LIST_OF_CHANNEL_NAMES> \
@@ -54,8 +141,16 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
     ./OSpackages.sh -X -a baseos,appstream,extras \
       -M install-manifests/rhel9-clones.txt \
       -m /mnt/ec2-root \
-      -r /root/RPM/RockyLinux/rocky-repos-9.6-1.3.el9.noarch.rpm,/root/RPM/RockyLinux/rocky-release-9.6-1.3.el9.noarch.rpm \
-      -x subscription-manager,redhat-rpm-config,rhn-check,rhn-client-tools,rhn-setup,rhnlib,rhnsd 
+      -r /root/RPM/RockyLinux/rocky-repos-9.7-1.5.el9.noarch.rpm,/root/RPM/RockyLinux/rocky-release-9.7-1.5.el9.noarch.rpm,/root/RPM/RockyLinux/rocky-gpg-keys-9.7-1.5.el9.noarch.rpm \
+      -x subscription-manager,redhat-rpm-config,rhn-check,rhn-client-tools,rhn-setup,rhnlib,rhnsd
+    ~~~
+    For Alma Linux 9, this would look something like:
+    ~~~
+    ./OSpackages.sh -X -a baseos,appstream,extras \
+      -M install-manifests/rhel9-clones.txt \
+      -m /mnt/ec2-root \
+      -r /root/RPM/AlmaLinux/almalinux-repos-9.7-1.el9.x86_64.rpm,/root/RPM/AlmaLinux/almalinux-release-9.7-1.el9.x86_64.rpm,/root/RPM/AlmaLinux/almalinux-gpg-keys-9.7-1.el9.x86_64.rpm \
+      -x subscription-manager,redhat-rpm-config,rhn-check,rhn-client-tools,rhn-setup,rhnlib,rhnsd
     ~~~
     Note: Due to environment-inheritance when using a RHUI-enabled AMI, it's necessary to:
     * Exclude (with `-x`) all RPMs related to RHUI-enablement
@@ -67,14 +162,18 @@ Depending on your CSP's environment, there may be no suitable starting-point AMI
     ~~~
     ./AWSutils.sh -d ~/RPM/Amazon/ \
       -c <URL_OF_AWSCLIv2_BUNDLE> \
+      -n <URL_OF_CFNBOOTSTRAP_ARCHIVE> \
       -s <URL_OF_AWS_SSM_AGENT_RPM> \
+      -t <SYSTEMD_SERVICE_NAMES>
       -m /mnt/ec2-root
     ~~~
     This will typically look something like:
     ~~~
-    ./AWSutils.sh -d ~/RPM/Amazon/ \
-      -c https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip \
-      -s https://s3.us-east-1.amazonaws.com/amazon-ssm-us-east-1/latest/linux_amd64/amazon-ssm-agent.rpm \
+    ./AWSutils.sh \
+      -c "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
+      -n https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.zip \
+      -s https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm \
+      -t amazon-ssm-agent \
       -m /mnt/ec2-root
     ~~~
     Note: If bootstrapping to Oracle Linux 9, see `DNF_VAR_*` note in the prior step
