@@ -217,6 +217,18 @@ function ConfigureCloudInit {
     err_exit "Enabling SEL lookups by nsswitch..." NONE
     printf "%-12s %s\n" sudoers: files >> "${CHROOTMNT}/etc/nsswitch.conf" || \
       err_exit "Failed enabling SEL lookups by nsswitch"
+
+    err_exit "Enabling cloud-init services using systemd preset..." NONE
+    mkdir -p "${CHROOTMNT}/etc/systemd/system-preset"
+    (
+      echo "enable cloud-init-local.service"
+      echo "enable cloud-init-local.service"
+      echo "enable cloud-init.service"
+      echo "enable cloud-config.service"
+      echo "enable cloud-final.service"
+    ) > "${CHROOTMNT}/etc/systemd/system-preset/91-cloud-init.preset"
+    chroot "${CHROOTMNT}" systemctl preset cloud-init-local.service cloud-init.service cloud-config.service cloud-final.service || \
+      err_exit "Failed to enable cloud-init services using systemd preset"
   fi
 }
 
