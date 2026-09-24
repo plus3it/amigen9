@@ -1,0 +1,111 @@
+name: Build AMIs via spel
+
+on:
+  pull_request_review:
+    types: [submitted]
+  workflow_dispatch:
+    inputs:
+      SPEL_VERSION:
+        description: 'SPEL_VERSION: Version to build (defaults to a date+sha derived value)'
+        type: string
+      SPEL_FORCE:
+        description: 'SPEL_FORCE: Whether to force deregister an image of the same name'
+        type: boolean
+        default: false
+      SPEL_BUILDERS:
+        description: |
+          SPEL_BUILDERS: JSON-encoded list of Packer builds to run, e.g.
+          ["amazon-ebssurrogate.minimal-alma-9-hvm", "amazon-ebssurrogate.minimal-amzn-2023-hvm"]
+        type: string
+      SPEL_PROJECTS:
+        description: |
+          SPEL_PROJECTS: JSON-encoded list of Codebuild Projects to run, e.g.
+          ["spel-commercial", "spel-govcloud"]
+        type: string
+
+concurrency:
+  group: build-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    if: contains(github.event.review.body, '/build') || github.event_name == 'workflow_dispatch'
+    env:
+      SPEL_BUILDERS: >-
+        [
+          "amazon-ebssurrogate.minimal-alma-9-hvm",
+          "amazon-ebssurrogate.minimal-amzn-2023-hvm",
+          "amazon-ebssurrogate.minimal-centos-9stream-hvm",
+          "amazon-ebssurrogate.minimal-ol-9-hvm",
+          "amazon-ebssurrogate.minimal-rhel-9-hvm",
+          "amazon-ebssurrogate.minimal-rl-9-hvm"
+        ]
+      SPEL_PROJECTS: >-
+        [
+          "spel-commercial",
+          "spel-govcloud"
+        ]
+    outputs:
+      version: ${{ steps.variables.outputs.version }}
+      force: ${{ steps.variables.outputs.force }}
+      builders: ${{ steps.variables.outputs.builders }}
+      projects: ${{ steps.variables.outputs.projects }}
+      amigen9_source: ${{ steps.variables.outputs.amigen9_source }}
+    steps:
+      - name: Set build inputs
+        id: variables
+        env:
+          IS_PR_REVIEW: ${{ github.event_name == 'pull_request_review' }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_CLONE_URL: ${{ github.event.pull_request.head.repo.clone_url }}
+          PUSH_SHA: ${{ github.sha }}
+          PUSH_REF_NAME: ${{ github.ref_name }}
+          PUSH_CLONE_URL: ${{ github.server_url }}/${{ github.repository }}.git
+          BUILDERS_INPUT: ${{ inputs.SPEL_BUILDERS }}
+          PROJECTS_INPUT: ${{ inputs.SPEL_PROJECTS }}
+          FORCE_INPUT: ${{ inputs.SPEL_FORCE }}
+          VERSION_INPUT: ${{ inputs.SPEL_VERSION }}
+        run: |
+          # amigen9-build.sh clones AMIGEN9_SOURCE with `git clone --branch`,
+          # which requires a real branch/tag name, not a commit sha.
+          if [[ "$IS_PR_REVIEW" == 'true' ]]; then
+            amigen9_url="$PR_HEAD_CLONE_URL"
+            amigen9_branch="$PR_HEAD_REF"
+            short_sha="$(cut -c1-7 <<< "$PR_HEAD_SHA")"
+            default_version="$(date +%Y.%m)-pr${PR_NUMBER}-${short_sha}"
+          else
+            amigen9_url="$PUSH_CLONE_URL"
+            amigen9_branch="$PUSH_REF_NAME"
+            short_sha="$(cut -c1-7 <<< "$PUSH_SHA")"
+            default_version="$(date +%Y.%m)-${short_sha}"
+          fi
+
+          amigen9_source="$(jq -nc --arg url "$amigen9_url" --arg branch "$amigen9_branch" '{url: $url, branch: $branch}')"
+
+          {
+            echo "builders=${BUILDERS_INPUT:-$(jq -c <<< "$SPEL_BUILDERS")}"
+            echo "projects=${PROJECTS_INPUT:-$(jq -c <<< "$SPEL_PROJECTS")}"
+            echo "force=${FORCE_INPUT:-false}"
+            echo "version=${VERSION_INPUT:-${default_version}}"
+            echo "amigen9_source=${amigen9_source}"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    # TODO: pin to a released tag/sha on plus3it/spel's master once
+    # https://github.com/plus3it/spel/pull/839 merges; this currently points
+    # at the tip of that PR's branch so amigen9 can exercise the reusable
+    # workflow before it lands.
+    uses: plus3it/spel/.github/workflows/build.yml@784c220fa16e406eedd559e151307b39a2872cae
+    with:
+      SPEL_VERSION: ${{ needs.prepare.outputs.version }}
+      SPEL_FORCE: ${{ fromJSON(needs.prepare.outputs.force) }}
+      SPEL_BUILDERS: ${{ needs.prepare.outputs.builders }}
+      SPEL_PROJECTS: ${{ needs.prepare.outputs.projects }}
+      AMIGEN9_SOURCE: ${{ needs.prepare.outputs.amigen9_source }}
