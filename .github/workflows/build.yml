@@ -98,6 +98,17 @@ jobs:
 
   build:
     needs: prepare
+    # GitHub statically validates the permissions of every job in the called
+    # reusable workflow's graph -- including spel's `release-pr` job, which
+    # declares `contents: write, pull-requests: write` -- against the ceiling
+    # granted here, before any `if:` conditions are evaluated. `release-pr`
+    # only runs for spel's own `schedule`/`SPEL_RELEASE` triggers (never for
+    # amigen9), but the ceiling must still cover it or the call is rejected
+    # at validation time. See https://github.com/actions/runner/issues/4151
+    # and https://github.com/orgs/community/discussions/63736.
+    permissions:
+      contents: write
+      pull-requests: write
     uses: plus3it/spel/.github/workflows/build.yml@525049d1895416f3c1532191098e31b55f163bb2
     with:
       SPEL_VERSION: ${{ needs.prepare.outputs.version }}
