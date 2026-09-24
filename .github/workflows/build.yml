@@ -98,11 +98,7 @@ jobs:
 
   build:
     needs: prepare
-    # TODO: pin to a released tag/sha on plus3it/spel's master once
-    # https://github.com/plus3it/spel/pull/839 merges; this currently points
-    # at the tip of that PR's branch so amigen9 can exercise the reusable
-    # workflow before it lands.
-    uses: plus3it/spel/.github/workflows/build.yml@784c220fa16e406eedd559e151307b39a2872cae
+    uses: plus3it/spel/.github/workflows/build.yml@525049d1895416f3c1532191098e31b55f163bb2
     with:
       SPEL_VERSION: ${{ needs.prepare.outputs.version }}
       SPEL_FORCE: ${{ fromJSON(needs.prepare.outputs.force) }}
