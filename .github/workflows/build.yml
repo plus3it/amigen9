@@ -1,4 +1,4 @@
-name: Build AMIs via spel
+name: Build images
 
 on:
   pull_request_review:
